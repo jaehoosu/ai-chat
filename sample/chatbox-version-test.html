@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatBox 버전 확인 테스트</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="js/chatbox.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .version-test {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .code {
+            background: #f1f3f4;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            margin: 8px 0;
+            font-size: 13px;
+        }
+        
+        .result {
+            background: #e9ecef;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin: 5px 0;
+            font-weight: bold;
+        }
+        
+        .success { background: #d1edff; color: #0c5460; }
+        .error { background: #f8d7da; color: #721c24; }
+        
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 13px;
+        }
+        
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>[ChatBox] 버전 확인 테스트</h1>
+        
+        <div class="version-test">
+            <h3>1. 정적 속성으로 버전 확인</h3>
+            <div class="code">$.fn.chatBox.version</div>
+            <button onclick="testStaticVersion()">테스트</button>
+            <div id="static-result" class="result"></div>
+        </div>
+        
+        <div class="version-test">
+            <h3>2. 플러그인 메서드로 버전 확인</h3>
+            <div class="code">$('#chatBox').chatBox('version')</div>
+            <button onclick="testPluginVersion()">테스트</button>
+            <div id="plugin-result" class="result"></div>
+        </div>
+        
+        <div class="version-test">
+            <h3>3. 인스턴스 메서드로 버전 확인</h3>
+            <div class="code">$('#chatBox').chatBox('getVersion')</div>
+            <button onclick="testInstanceVersion()">테스트</button>
+            <div id="instance-result" class="result"></div>
+        </div>
+        
+        <div class="version-test">
+            <h3>4. 모든 방법 테스트</h3>
+            <button onclick="testAllVersionMethods()">전체 테스트</button>
+            <div id="all-result" class="result"></div>
+        </div>
+        
+        <!-- 숨겨진 ChatBox (테스트용) -->
+        <div id="chatBox" style="display: none;"></div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // ChatBox 초기화
+            $('#chatBox').chatBox({
+                showWelcome: false
+            });
+            
+            console.log('[INFO] ChatBox 버전 테스트 페이지 로드됨');
+        });
+        
+        // 1. 정적 속성 테스트
+        function testStaticVersion() {
+            try {
+                const version = $.fn.chatBox.version;
+                $('#static-result')
+                    .removeClass('error')
+                    .addClass('success')
+                    .text(`성공: ${version}`);
+                console.log('정적 속성 버전:', version);
+            } catch (error) {
+                $('#static-result')
+                    .removeClass('success')
+                    .addClass('error')
+                    .text(`오류: ${error.message}`);
+                console.error('정적 속성 오류:', error);
+            }
+        }
+        
+        // 2. 플러그인 메서드 테스트
+        function testPluginVersion() {
+            try {
+                const version = $('#chatBox').chatBox('version');
+                $('#plugin-result')
+                    .removeClass('error')
+                    .addClass('success')
+                    .text(`성공: ${version}`);
+                console.log('플러그인 메서드 버전:', version);
+            } catch (error) {
+                $('#plugin-result')
+                    .removeClass('success')
+                    .addClass('error')
+                    .text(`오류: ${error.message}`);
+                console.error('플러그인 메서드 오류:', error);
+            }
+        }
+        
+        // 3. 인스턴스 메서드 테스트
+        function testInstanceVersion() {
+            try {
+                const version = $('#chatBox').chatBox('getVersion');
+                $('#instance-result')
+                    .removeClass('error')
+                    .addClass('success')
+                    .text(`성공: ${version}`);
+                console.log('인스턴스 메서드 버전:', version);
+            } catch (error) {
+                $('#instance-result')
+                    .removeClass('success')
+                    .addClass('error')
+                    .text(`오류: ${error.message}`);
+                console.error('인스턴스 메서드 오류:', error);
+            }
+        }
+        
+        // 4. 전체 테스트
+        function testAllVersionMethods() {
+            const results = [];
+            
+            // 정적 속성
+            try {
+                const staticVersion = $.fn.chatBox.version;
+                results.push(`정적: ${staticVersion}`);
+            } catch (error) {
+                results.push(`정적: ERROR - ${error.message}`);
+            }
+            
+            // 플러그인 메서드
+            try {
+                const pluginVersion = $('#chatBox').chatBox('version');
+                results.push(`플러그인: ${pluginVersion}`);
+            } catch (error) {
+                results.push(`플러그인: ERROR - ${error.message}`);
+            }
+            
+            // 인스턴스 메서드
+            try {
+                const instanceVersion = $('#chatBox').chatBox('getVersion');
+                results.push(`인스턴스: ${instanceVersion}`);
+            } catch (error) {
+                results.push(`인스턴스: ERROR - ${error.message}`);
+            }
+            
+            const hasError = results.some(result => result.includes('ERROR'));
+            $('#all-result')
+                .removeClass('success error')
+                .addClass(hasError ? 'error' : 'success')
+                .html(results.join('<br>'));
+            
+            console.log('전체 테스트 결과:', results);
+        }
+        
+        // 페이지 로드 시 자동 테스트
+        setTimeout(() => {
+            console.log('=== 자동 버전 확인 테스트 ===');
+            testAllVersionMethods();
+        }, 500);
+    </script>
+</body>
+</html>

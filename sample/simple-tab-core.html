@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>탭-폼 동기화 플러그인 (코어)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .demo-header {
+            background: #f0f8ff;
+            border: 1px solid #87ceeb;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        /* 탭 메뉴 */
+        .tab-menu ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .tab-menu li {
+            margin-right: 5px;
+        }
+
+        .tab-menu a {
+            display: block;
+            padding: 10px 15px;
+            text-decoration: none;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            border-radius: 5px 5px 0 0;
+            color: #333;
+            cursor: pointer;
+        }
+
+        .tab-menu a.current {
+            background: #fff;
+            border-bottom: 2px solid #fff;
+            margin-bottom: -2px;
+            color: #0077aa;
+            font-weight: bold;
+        }
+
+        .tab-menu a:hover {
+            background: #e0e0e0;
+        }
+
+        /* 입력 폼 */
+        .form-container {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+            background: #fff;
+        }
+
+        .menu-form {
+            display: none;
+        }
+
+        .menu-form.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-group select,
+        .form-group textarea,
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        .form-group textarea {
+            height: 80px;
+            resize: vertical;
+        }
+
+        /* 상태 표시 */
+        .status-panel {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .status-row {
+            margin-bottom: 10px;
+        }
+
+        .status-label {
+            font-weight: bold;
+            display: inline-block;
+            width: 120px;
+        }
+
+        .status-value {
+            color: #0077aa;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            background: #0077aa;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        .btn:hover {
+            background: #005588;
+        }
+
+        .empty-form-message {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-header">
+        <h2>🔄 탭-폼 동기화 플러그인 (코어 버전)</h2>
+        <p><strong>경량화된 핵심 기능:</strong></p>
+        <ul>
+            <li>✅ 탭 메뉴 동적 생성</li>
+            <li>✅ 입력 폼 동적 생성</li>
+            <li>✅ 탭↔폼 실시간 동기화</li>
+            <li>✅ API 기반 메뉴 데이터 로드</li>
+        </ul>
+    </div>
+
+    <!-- 상태 표시 패널 -->
+    <div class="status-panel">
+        <div class="status-row">
+            <span class="status-label">현재 메뉴:</span>
+            <span class="status-value" id="currentMenu">-</span>
+        </div>
+        <div class="status-row">
+            <span class="status-label">선택된 값:</span>
+            <span class="status-value" id="currentValues">없음</span>
+        </div>
+        <div class="status-row">
+            <button class="btn" onclick="tabFormSync.reset()">전체 초기화</button>
+            <button class="btn" onclick="tabFormSync.getCurrentData()">현재 데이터</button>
+        </div>
+    </div>
+
+    <!-- 탭 메뉴 컨테이너 -->
+    <div class="tab-menu">
+        <ul id="tabContainer">
+            <!-- 탭들이 플러그인으로 동적 생성됨 -->
+        </ul>
+    </div>
+
+    <!-- 입력 폼 컨테이너 -->
+    <div class="form-container" id="formContainer">
+        <!-- 폼들이 플러그인으로 동적 생성됨 -->
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="TabFormSync.js"></script>
+    <script>
+        // 플러그인 사용 예시
+        const tabFormSync = new TabFormSync({
+            apiUrl: '/api/menu/list',
+            tabContainer: '#tabContainer',
+            formContainer: '#formContainer',
+            statusElements: {
+                currentMenu: '#currentMenu',
+                currentValues: '#currentValues'
+            },
+            onTabChange: (menuId, menuName) => {
+                console.log(`탭 변경: ${menuName} (${menuId})`);
+            },
+            onFormChange: (data) => {
+                console.log('폼 데이터 변경:', data);
+            }
+        });
+
+        // 플러그인 초기화
+        tabFormSync.init();
+    </script>
+</body>
+</html>

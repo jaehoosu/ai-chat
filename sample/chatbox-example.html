@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatBox Plugin 사용 예제</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="js/chatbox.css">
+    <script src="js/chatbox.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .controls {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+        .controls button {
+            margin: 5px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+        }
+        .controls button:hover {
+            background-color: #0056b3;
+        }
+        .controls input, .controls textarea {
+            margin: 5px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 200px;
+        }
+        .controls textarea {
+            width: 300px;
+            height: 60px;
+            resize: vertical;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        h2 {
+            color: #666;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>ChatBox jQuery Plugin 사용 예제</h1>
+    
+    <h2>기본 사용법</h2>
+    
+    <div class="controls">
+        <h3>메시지 전송 테스트</h3>
+        <div>
+            <input type="text" id="requestInput" placeholder="요청 메시지 입력" value="안녕하세요!">
+            <button onclick="sendRequestMessage()">요청 메시지 전송</button>
+        </div>
+        <div>
+            <textarea id="responseInput" placeholder="응답 메시지 입력">안녕하세요! 무엇을 도와드릴까요?</textarea>
+            <button onclick="sendResponseMessage()">응답 메시지 전송</button>
+        </div>
+        <div>
+            <input type="text" id="errorInput" placeholder="에러 메시지 입력" value="네트워크 오류가 발생했습니다.">
+            <button onclick="sendErrorMessage()">에러 메시지 전송</button>
+        </div>
+        <div>
+            <button onclick="testStreamingResponse()">스트리밍 응답 테스트</button>
+            <button onclick="clearChatBox()">채팅박스 초기화</button>
+            <button onclick="showMessageCount()">메시지 개수 확인</button>
+            <button onclick="testMaxMessages()">최대 메시지 수 테스트</button>
+        </div>
+    </div>
+
+    <h2>ChatBox</h2>
+    <div id="chatBox"></div>
+
+    <script>
+        // ChatBox 초기화
+        $(document).ready(function() {
+            $('#chatBox').chatBox({
+                height: '400px',
+                autoScroll: true,
+                enableTimestamp: true,
+                maxMessages: 10  // 최대 10개 메시지로 제한
+            });
+            
+            // 샘플 메시지들 추가
+            setTimeout(addSampleMessages, 1000);
+        });
+
+        // 요청 메시지 전송
+        function sendRequestMessage() {
+            const content = $('#requestInput').val().trim();
+            if (!content) {
+                alert('메시지를 입력해주세요.');
+                return;
+            }
+            
+            $('#chatBox').chatBox('addRequestMessage', {
+                content: content,
+                timestamp: new Date()
+            });
+            
+            $('#requestInput').val('');
+        }
+
+        // 응답 메시지 전송
+        function sendResponseMessage() {
+            const content = $('#responseInput').val().trim();
+            if (!content) {
+                alert('메시지를 입력해주세요.');
+                return;
+            }
+            
+            const groupId = 'group_' + Date.now();
+            
+            $('#chatBox').chatBox('addResponseMessage', {
+                groupId: groupId,
+                content: content,
+                metadata: {
+                    cacheYn: Math.random() > 0.5, // 랜덤으로 캐시 여부 결정
+                    responseTime: (Math.random() * 3 + 0.5).toFixed(1),
+                    cacheKey: 'sample_cache_key_' + Math.random().toString(36).substr(2, 9)
+                },
+                isComplete: true
+            });
+            
+            $('#responseInput').val('');
+        }
+
+        // 에러 메시지 전송
+        function sendErrorMessage() {
+            const content = $('#errorInput').val().trim();
+            if (!content) {
+                alert('메시지를 입력해주세요.');
+                return;
+            }
+            
+            $('#chatBox').chatBox('addErrorMessage', {
+                content: content,
+                timestamp: new Date()
+            });
+            
+            $('#errorInput').val('');
+        }
+
+        // 스트리밍 응답 테스트
+        function testStreamingResponse() {
+            const groupId = 'streaming_group_' + Date.now();
+            
+            // 첫 번째 응답
+            $('#chatBox').chatBox('addResponseMessage', {
+                groupId: groupId,
+                content: '스트리밍 응답을 시작합니다...',
+                metadata: {
+                    cacheYn: false
+                },
+                isComplete: false
+            });
+            
+            // 시간차를 두고 추가 응답들
+            const messages = [
+                '첫 번째 스트리밍 데이터입니다.',
+                '두 번째 스트리밍 데이터가 도착했습니다.',
+                '세 번째 데이터와 함께 추가 정보를 제공합니다.',
+                '스트리밍 응답이 완료되었습니다.'
+            ];
+            
+            messages.forEach((message, index) => {
+                setTimeout(() => {
+                    $('#chatBox').chatBox('updateStreamingResponse', groupId, message);
+                    
+                    // 마지막 메시지일 때 메타데이터 추가
+                    if (index === messages.length - 1) {
+                        setTimeout(() => {
+                            const chatBox = $('#chatBox').data('chatBox');
+                            const $group = $('#' + groupId);
+                            chatBox.addResponseFooter($group, {
+                                responseTime: '2.3',
+                                cacheKey: 'streaming_cache_key',
+                                command: 'test.cache.get.streaming'
+                            });
+                        }, 500);
+                    }
+                }, (index + 1) * 1000);
+            });
+        }
+
+        // 채팅박스 초기화
+        function clearChatBox() {
+            $('#chatBox').chatBox('clear');
+        }
+
+        // 메시지 개수 확인
+        function showMessageCount() {
+            const count = $('#chatBox').chatBox('getMessageCount');
+            alert(`현재 메시지 개수: ${count}개`);
+        }
+
+        // 샘플 메시지 추가
+        function addSampleMessages() {
+            // 샘플 요청 메시지
+            $('#chatBox').chatBox('addRequestMessage', {
+                content: '상품 정보를 알려주세요.',
+                timestamp: new Date(Date.now() - 60000) // 1분 전
+            });
+            
+            // 샘플 응답 메시지
+            setTimeout(() => {
+                $('#chatBox').chatBox('addResponseMessage', {
+                    groupId: 'sample_group_1',
+                    content: '요청하신 상품 정보를 조회하였습니다. 다음은 주요 상품들입니다:<br><ul><li>상품A: 가격 10,000원</li><li>상품B: 가격 20,000원</li><li>상품C: 가격 15,000원</li></ul>',
+                    metadata: {
+                        cacheYn: true,
+                        responseTime: '1.2',
+                        cacheKey: 'product_info_cache',
+                        command: 'product.cache.get.info'
+                    },
+                    isComplete: true
+                });
+            }, 1000);
+            
+            // 샘플 에러 메시지
+            setTimeout(() => {
+                $('#chatBox').chatBox('addErrorMessage', {
+                    content: '네트워크 연결 오류: 일시적인 문제가 발생했습니다.',
+                    timestamp: new Date(Date.now() - 30000) // 30초 전
+                });
+            }, 2000);
+        }
+
+        // 최대 메시지 수 테스트
+        function testMaxMessages() {
+            alert('15개의 메시지를 연속으로 추가합니다.\n최대 메시지 수가 10개로 설정되어 있어서 오래된 메시지는 자동으로 제거됩니다.\n\n콘솔창을 열어서 로그를 확인해보세요!');
+            
+            for (let i = 1; i <= 15; i++) {
+                setTimeout(() => {
+                    if (i % 2 === 1) {
+                        // 홀수: 요청 메시지
+                        $('#chatBox').chatBox('addRequestMessage', {
+                            content: `테스트 요청 메시지 ${i}번입니다.`,
+                            timestamp: new Date()
+                        });
+                    } else {
+                        // 짝수: 응답 메시지
+                        $('#chatBox').chatBox('addResponseMessage', {
+                            groupId: `test_group_${i}`,
+                            content: `테스트 응답 메시지 ${i}번입니다. 현재 시간: ${new Date().toLocaleTimeString()}`,
+                            metadata: {
+                                cacheYn: i % 4 === 0, // 4의 배수일 때만 캐시
+                                responseTime: (Math.random() * 2 + 0.5).toFixed(1),
+                                cacheKey: i % 4 === 0 ? `test_cache_${i}` : null
+                            },
+                            isComplete: true
+                        });
+                    }
+                }, i * 500); // 0.5초 간격으로 추가
+            }
+        }
+    </script>
+</body>
+</html>

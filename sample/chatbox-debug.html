@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatBox Plugin 디버그 테스트</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .test-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .debug-info {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        button {
+            margin: 5px;
+            padding: 8px 16px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #chatBox {
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            margin: 20px 0;
+            width: 100%;
+            max-width: 600px;
+            height: 400px;
+            min-height: 300px;
+            resize: both;
+            overflow: auto;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>ChatBox Plugin 디버그 테스트</h1>
+        
+        <div class="debug-info">
+            <h3>디버그 정보</h3>
+            <p>jQuery 버전: <span id="jqueryVersion"></span></p>
+            <p>ChatBox 플러그인 로드 상태: <span id="pluginStatus"></span></p>
+            <p>현재 시간: <span id="currentTime"></span></p>
+        </div>
+        
+        <div>
+            <button onclick="initChatBox()">ChatBox 초기화</button>
+            <button onclick="initChatBoxCustom()">커스텀 환영메시지로 초기화</button>
+            <button onclick="testBasicMessage()">기본 메시지 테스트</button>
+            <button onclick="testCacheMessage()">캐시 관리 버튼 테스트</button>
+            <button onclick="testError()">에러 테스트</button>
+            <button onclick="checkStatus()">상태 확인</button>
+            <button onclick="testUtilities()">유틸리티 테스트</button>
+        </div>
+        
+        <div id="chatBox"></div>
+        
+        <div id="errorLog" style="background: #ffebee; padding: 10px; margin: 10px 0; border-radius: 4px; display: none;">
+            <h4>오류 로그:</h4>
+            <div id="errorContent"></div>
+        </div>
+    </div>
+
+    <!-- CSS 먼저 로드 -->
+    <link rel="stylesheet" href="js/chatbox.css">
+    
+    <!-- ChatBox JS 로드 -->
+    <script src="js/chatbox.js"></script>
+    
+    <script>
+        // 전역 에러 핸들러
+        window.onerror = function(msg, url, line, col, error) {
+            console.error('Global Error:', msg, 'at', url + ':' + line + ':' + col);
+            showError('Global Error: ' + msg + ' at line ' + line);
+            return false;
+        };
+        
+        // jQuery ready 확인
+        $(document).ready(function() {
+            updateDebugInfo();
+            console.log('Document ready, jQuery version:', $.fn.jquery);
+            
+            // ChatBox 플러그인이 로드되었는지 확인
+            if (typeof $.fn.chatBox === 'function') {
+                $('#pluginStatus').text('정상 로드됨').css('color', 'green');
+            } else {
+                $('#pluginStatus').text('로드 실패').css('color', 'red');
+                showError('ChatBox 플러그인이 로드되지 않았습니다.');
+            }
+        });
+        
+        function updateDebugInfo() {
+            $('#jqueryVersion').text($.fn.jquery || 'Unknown');
+            $('#currentTime').text(new Date().toLocaleString('ko-KR'));
+        }
+        
+        function showError(message) {
+            $('#errorLog').show();
+            $('#errorContent').append('<div>' + new Date().toLocaleTimeString() + ': ' + message + '</div>');
+        }
+        
+        function initChatBox() {
+            try {
+                console.log('ChatBox 초기화 시도...');
+                
+                // 기존 인스턴스 제거
+                const existing = $('#chatBox').data('chatBox');
+                if (existing) {
+                    console.log('기존 ChatBox 인스턴스 발견, 제거 중...');
+                    $('#chatBox').removeData('chatBox');
+                }
+                
+                // ChatBox 초기화 (기본 환경 메시지)
+                $('#chatBox').chatBox({
+                    height: '300px',
+                    autoScroll: true,
+                    enableTimestamp: true,
+                    welcomeMessage: '채팅을 시작합니다.',
+                    showWelcome: true,
+                    onCacheAction: function(action, cacheKey, metadata) {
+                        console.log('캐시 액션 처리:', action, cacheKey, metadata);
+                        
+                        // 캐시 관리 팝업 처리
+                        if (action === 'manage') {
+                            console.log('캐시 관리 팝업 시뮬레이션:', cacheKey);
+                            // 실제 구현에서는 여기서 REST API를 호출하고 팝업을 표시
+                            alert(`캐시 관리 창을 열겠습니다.\n\n캐시 키: ${cacheKey}\n명령어: ${metadata.command || 'N/A'}\n\n실제 구현에서는:\n1. REST API로 캐시 데이터 조회\n2. 팝업 창 표시\n3. 편집 기능 제공`);
+                            return;
+                        }
+                        
+                        // 기타 액션 처리 (삭제, 새로고침 등)
+                        if (action === 'delete') {
+                            console.log('캐시 삭제 API 호출 시뮬레이션:', cacheKey);
+                            // 예: await deleteCache(cacheKey);
+                        } else if (action === 'refresh') {
+                            console.log('캐시 새로고침 API 호출 시뮬레이션:', cacheKey);
+                            // 예: await refreshCache(cacheKey);
+                        }
+                        
+                        // 성공 메시지 표시
+                        const actionText = action === 'delete' ? '삭제' : '새로고침';
+                        alert(`캐시 ${actionText}가 성공적으로 처리되었습니다!\n\n캐시 키: ${cacheKey}\n명령어: ${metadata.command || 'N/A'}`);
+                    }
+                });
+                
+                console.log('ChatBox 초기화 완료');
+                alert('ChatBox가 성공적으로 초기화되었습니다.');
+                
+            } catch (error) {
+                console.error('ChatBox 초기화 오류:', error);
+                showError('ChatBox 초기화 오류: ' + error.message);
+                alert('ChatBox 초기화 실패: ' + error.message);
+            }
+        }
+        
+        function initChatBoxCustom() {
+            try {
+                console.log('커스텀 ChatBox 초기화 시도...');
+                
+                // 기존 인스턴스 제거
+                $('#chatBox').removeData('chatBox').empty();
+                
+                // ChatBox 초기화 (커스텀 환영 메시지)
+                $('#chatBox').chatBox({
+                    height: '300px',
+                    autoScroll: true,
+                    enableTimestamp: true,
+                    welcomeMessage: '🚀 AI 상품 상담 챗봇을 시작합니다! 궁금한 것을 물어보세요.',
+                    showWelcome: true,
+                    onCacheAction: function(action, cacheKey, metadata) {
+                        console.log('캐시 액션 처리 (커스텀):', action, cacheKey, metadata);
+                        
+                        // 캐시 관리 팝업 처리
+                        if (action === 'manage') {
+                            console.log('캐시 관리 팝업 시뮬레이션 (커스텀):', cacheKey);
+                            // 실제 구현에서는 여기서 REST API를 호출하고 팝업을 표시
+                            alert(`🚀 캐시 관리 창을 열겠습니다!\n\n캐시 키: ${cacheKey}\n명령어: ${metadata.command || 'N/A'}\n\n실제 구현에서는:\n1. REST API로 캐시 데이터 조회\n2. 팝업 창 표시\n3. 편집 기능 제공`);
+                            return;
+                        }
+                        
+                        // 기타 액션 처리 (삭제, 새로고침 등)
+                        if (action === 'delete') {
+                            console.log('캐시 삭제 API 호출 시뮬레이션:', cacheKey);
+                            // 예: await deleteCache(cacheKey);
+                        } else if (action === 'refresh') {
+                            console.log('캐시 새로고침 API 호출 시뮬레이션:', cacheKey);
+                            // 예: await refreshCache(cacheKey);
+                        }
+                        
+                        // 성공 메시지 표시
+                        const actionText = action === 'delete' ? '삭제' : '새로고침';
+                        alert(`캐시 ${actionText}가 성공적으로 처리되었습니다!\n\n캐시 키: ${cacheKey}\n명령어: ${metadata.command || 'N/A'}`);
+                    }
+                });
+                
+                console.log('커스텀 ChatBox 초기화 완료');
+                alert('커스텀 환영 메시지로 ChatBox가 초기화되었습니다.');
+                
+            } catch (error) {
+                console.error('커스텀 ChatBox 초기화 오류:', error);
+                showError('커스텀 ChatBox 초기화 오류: ' + error.message);
+                alert('커스텀 ChatBox 초기화 실패: ' + error.message);
+            }
+        }
+        
+        function testBasicMessage() {
+            try {
+                console.log('기본 메시지 테스트 시작...');
+                
+                // ChatBox 인스턴스 확인
+                const instance = $('#chatBox').data('chatBox');
+                if (!instance) {
+                    throw new Error('ChatBox가 초기화되지 않았습니다. 먼저 초기화를 진행해주세요.');
+                }
+                
+                // 요청 메시지 추가
+                $('#chatBox').chatBox('addRequestMessage', {
+                    content: '테스트 메시지입니다. 메시지입니다메시지입니다메시지입니다메시지입니다',
+                    timestamp: new Date()
+                });
+                
+                // 응답 메시지 추가
+                setTimeout(() => {
+                    $('#chatBox').chatBox('addResponseMessage', {
+                        groupId: 'test_group_' + Date.now(),
+                        content: '테스트 응답 메시지입니다.',
+                        metadata: {
+                            cacheYn: true,
+                            responseTime: '0.5'
+                        },
+                        isComplete: true
+                    });
+                }, 1000);
+                
+                console.log('기본 메시지 테스트 완료');
+                
+            } catch (error) {
+                console.error('메시지 테스트 오류:', error);
+                showError('메시지 테스트 오류: ' + error.message);
+                alert('메시지 테스트 실패: ' + error.message);
+            }
+        }
+        
+        function testCacheMessage() {
+            try {
+                console.log('캐시 관리 버튼 테스트 시작...');
+                
+                // ChatBox 인스턴스 확인
+                const instance = $('#chatBox').data('chatBox');
+                if (!instance) {
+                    throw new Error('ChatBox가 초기화되지 않았습니다. 먼저 초기화를 진행해주세요.');
+                }
+                
+                // 요청 메시지 추가
+                $('#chatBox').chatBox('addRequestMessage', {
+                    content: '상품 정보를 알려주세요.',
+                    timestamp: new Date()
+                });
+                
+                // 캐시 관리 버튼이 포함된 응답 메시지 추가
+                setTimeout(() => {
+                    $('#chatBox').chatBox('addResponseMessage', {
+                        groupId: 'cache_test_group_' + Date.now(),
+                        content: `
+                            <strong>상품 정보 조회 결과</strong><br>
+                            다음은 요청하신 상품들입니다:<br>
+                            <ul>
+                                <li>스마트폰 Galaxy S24: 990,000원</li>
+                                <li>노트북 MacBook Pro: 2,490,000원</li>
+                                <li>태블릿 iPad Air: 890,000원</li>
+                            </ul>
+                            총 3개의 상품이 검색되었습니다.
+                        `,
+                        metadata: {
+                            cacheYn: true,
+                            responseTime: '1.8',
+                            cacheKey: 'product_search_20250801_123456',
+                            command: '2001.cache.get.product_search_20250801_123456'
+                        },
+                        isComplete: true
+                    });
+                }, 1000);
+                
+                // 추가 응답 (캐시되지 않은 응답)
+                setTimeout(() => {
+                    $('#chatBox').chatBox('addResponseMessage', {
+                        groupId: 'non_cache_group_' + Date.now(),
+                        content: `
+                            <strong>실시간 재고 정보</strong><br>
+                            현재 재고 상황입니다:<br>
+                            <ul>
+                                <li>Galaxy S24: <span style="color: green;">재고 충분</span></li>
+                                <li>MacBook Pro: <span style="color: orange;">재고 부족 (3개 남음)</span></li>
+                                <li>iPad Air: <span style="color: red;">품절</span></li>
+                            </ul>
+                        `,
+                        metadata: {
+                            cacheYn: false,
+                            responseTime: '0.3',
+                            cacheKey: null
+                        },
+                        isComplete: true
+                    });
+                }, 2500);
+                
+                console.log('캐시 관리 버튼 테스트 완료');
+                
+            } catch (error) {
+                console.error('캐시 관리 버튼 테스트 오류:', error);
+                showError('캐시 관리 버튼 테스트 오류: ' + error.message);
+                alert('캐시 관리 버튼 테스트 실패: ' + error.message);
+            }
+        }
+        
+        function testError() {
+            try {
+                $('#chatBox').chatBox('addErrorMessage', {
+                    content: '이것은 테스트 에러 메시지입니다.',
+                    timestamp: new Date()
+                });
+                console.log('에러 메시지 테스트 완료');
+            } catch (error) {
+                console.error('에러 메시지 테스트 실패:', error);
+                showError('에러 메시지 테스트 실패: ' + error.message);
+            }
+        }
+        
+        function checkStatus() {
+            try {
+                const instance = $('#chatBox').data('chatBox');
+                if (instance) {
+                    const count = $('#chatBox').chatBox('getMessageCount');
+                    alert('ChatBox 상태: 정상\n메시지 개수: ' + count + '개');
+                } else {
+                    alert('ChatBox 상태: 초기화되지 않음');
+                }
+            } catch (error) {
+                alert('상태 확인 실패: ' + error.message);
+            }
+        }
+
+        function testUtilities() {
+            try {
+                console.log('유틸리티 테스트 시작...');
+                
+                // ID 생성 테스트
+                const id1 = $.fn.chatBox.utils.generateId('test');
+                const id2 = $.fn.chatBox.utils.generateId('msg');
+                const id3 = $.fn.chatBox.utils.generateId(); // 기본값 'id' 사용
+                
+                console.log('생성된 ID들:', id1, id2, id3);
+                
+                // HTML 이스케이프 테스트
+                const unsafeHtml = '<script>alert("xss")</script> & "quotes" & apostrophes';
+                const safeHtml = $.fn.chatBox.utils.escapeHtml(unsafeHtml);
+                console.log('원본:', unsafeHtml);
+                console.log('이스케이프됨:', safeHtml);
+                
+                // 시간 포맷팅 테스트
+                const currentTime = $.fn.chatBox.utils.formatTime();
+                const specificTime = $.fn.chatBox.utils.formatTime(new Date('2025-01-01 15:30:45'));
+                console.log('현재 시간:', currentTime);
+                console.log('특정 시간:', specificTime);
+                
+                // 결과 표시
+                const result = `
+유틸리티 테스트 결과:
+
+ID 생성:
+- ${id1}
+- ${id2}  
+- ${id3}
+
+HTML 이스케이프:
+원본: ${unsafeHtml}
+결과: ${safeHtml}
+
+시간 포맷팅:
+현재: ${currentTime}
+특정: ${specificTime}
+
+모든 유틸리티가 정상 작동합니다!
+                `;
+                
+                alert(result);
+                console.log('유틸리티 테스트 완료');
+                
+            } catch (error) {
+                console.error('유틸리티 테스트 실패:', error);
+                showError('유틸리티 테스트 실패: ' + error.message);
+                alert('유틸리티 테스트 실패: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

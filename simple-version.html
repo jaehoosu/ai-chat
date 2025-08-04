@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTTP Utility 버전 확인</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="js/ajax-util.js"></script>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 40px; 
+            line-height: 1.6;
+        }
+        .container { 
+            max-width: 600px; 
+            margin: 0 auto; 
+        }
+        .version-box { 
+            background: #f8f9fa; 
+            border: 1px solid #dee2e6; 
+            border-radius: 8px; 
+            padding: 20px; 
+            margin: 20px 0;
+            text-align: center;
+        }
+        .version-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #007bff;
+            margin: 10px 0;
+        }
+        .code {
+            background: #f1f3f4;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            margin: 10px 0;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 HTTP Utility 버전 확인</h1>
+        
+        <div class="version-box">
+            <h2>현재 버전</h2>
+            <div class="version-number" id="version-display">로딩 중...</div>
+            <button onclick="checkVersion()">버전 확인</button>
+        </div>
+        
+        <div class="version-box">
+            <h3>사용법</h3>
+            
+            <p><strong>1. 직접 속성 접근:</strong></p>
+            <div class="code">console.log($.http.version);</div>
+            
+            <p><strong>2. 메서드 호출:</strong></p>
+            <div class="code">console.log($.http.getVersion());</div>
+            
+            <p><strong>3. 호환성 확인 예제:</strong></p>
+            <div class="code">
+if ($.http.version >= '1.0.0') {<br>
+&nbsp;&nbsp;console.log('사용 가능!');<br>
+}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 페이지 로드 시 버전 표시
+        $(document).ready(function() {
+            checkVersion();
+            
+            // 콘솔에 간단하게 출력
+            console.log('HTTP Utility 로드됨 - 버전:', $.http.version);
+        });
+        
+        function checkVersion() {
+            // 두 가지 방법 모두 보여주기
+            const version1 = $.http.version;        // 직접 접근
+            const version2 = $.http.getVersion();   // 메서드 호출
+            
+            $('#version-display').text(version1);
+            
+            console.log('직접 접근:', version1);
+            console.log('메서드 호출:', version2);
+            console.log('동일한가?', version1 === version2);
+        }
+    </script>
+</body>
+</html>

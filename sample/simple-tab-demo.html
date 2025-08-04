@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>탭 메뉴 + 입력폼 동기화 데모</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .demo-header {
+            background: #f0f8ff;
+            border: 1px solid #87ceeb;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        .demo-header h2 {
+            margin: 0 0 10px 0;
+            color: #0077aa;
+        }
+
+        /* 탭 메뉴 */
+        .tab-menu ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .tab-menu li {
+            margin-right: 5px;
+        }
+
+        .tab-menu a {
+            display: block;
+            padding: 10px 15px;
+            text-decoration: none;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            border-radius: 5px 5px 0 0;
+            color: #333;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .tab-menu a i {
+            margin-right: 5px;
+        }
+
+        .tab-menu a.current {
+            background: #fff;
+            border-bottom: 2px solid #fff;
+            margin-bottom: -2px;
+            color: #0077aa;
+            font-weight: bold;
+        }
+
+        .tab-menu a:hover {
+            background: #e0e0e0;
+        }
+
+        .tab-menu a.disabled {
+            background: #f8f8f8;
+            color: #ccc;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        /* 빈 폼 메시지 */
+        .empty-form-message {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6c757d;
+        }
+
+        /* 입력 폼 */
+        .form-container {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+            background: #fff;
+        }
+
+        .menu-form {
+            display: none;
+        }
+
+        .menu-form.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .form-group textarea {
+            height: 80px;
+            resize: vertical;
+        }
+
+        /* 상태 표시 */
+        .status-panel {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .status-row {
+            margin-bottom: 10px;
+        }
+
+        .status-label {
+            font-weight: bold;
+            display: inline-block;
+            width: 120px;
+        }
+
+        .status-value {
+            color: #0077aa;
+        }
+
+        .payload-display {
+            background: #f5f5f5;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 3px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 12px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            background: #0077aa;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        .btn:hover {
+            background: #005588;
+        }
+
+        .highlight {
+            background: #ffffcc;
+            padding: 2px 4px;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-header">
+        <h2>🔄 탭 메뉴 + 입력폼 동기화 데모</h2>
+        <p><strong>핵심 개선사항:</strong></p>
+        <ul>
+            <li>✅ <span class="highlight">selectedProducts 전역변수 제거</span> → DOM에서 직접 읽기</li>
+            <li>✅ <span class="highlight">MENU_CONFIG 기반 초기화</span> → 설정 중심 관리</li>
+            <li>✅ <span class="highlight">실시간 상태 동기화</span> → 탭↔입력폼↔페이로드</li>
+        </ul>
+    </div>
+
+    <!-- 상태 표시 패널 -->
+    <div class="status-panel">
+        <div class="status-row">
+            <span class="status-label">현재 메뉴:</span>
+            <span class="status-value" id="currentMenu">상품요약</span>
+        </div>
+        <div class="status-row">
+            <span class="status-label">선택된 값:</span>
+            <span class="status-value" id="currentValues">없음</span>
+        </div>
+        <div class="status-row">
+            <button class="btn" onclick="showPayload()">페이로드 확인</button>
+            <button class="btn" onclick="clearAll()">전체 초기화</button>
+            <button class="btn" onclick="toggleAutoSync()">자동동기화: <span id="autoSyncStatus">OFF</span></button>
+        </div>
+        <div class="payload-display" id="payloadDisplay" style="display: none;"></div>
+    </div>
+
+    <!-- 탭 메뉴 (동적 생성) -->
+    <div class="tab-menu">
+        <ul id="dynamicTabMenu">
+            <!-- 탭들이 JavaScript로 동적 생성됨 -->
+        </ul>
+    </div>
+
+    <!-- 숨겨진 현재 메뉴 ID -->
+    <input type="hidden" id="currentMenuId" value="">
+
+    <!-- 입력 폼들 (동적 생성) -->
+    <div class="form-container" id="dynamicFormContainer">
+        <!-- 폼들이 JavaScript로 동적 생성됨 -->
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        // 실제 환경 적용: 동적 메뉴 설정 (REST API에서 로드)
+        let MENU_CONFIG = {}; // 초기값은 빈 객체, API에서 동적으로 채워짐
+        let tabMenuList = []; // 서버에서 받아온 탭 메뉴 데이터
+
+        // 기본 설정 템플릿 (API 응답에 설정이 없을 때 폴백용)
+        const DEFAULT_ELEMENT_CONFIG = {
+            'select': { defaultValue: '00', type: 'select' },
+            'textarea': { defaultValue: '', type: 'textarea' },
+            'input': { defaultValue: '', type: 'input' }
+        };
+
+        // 실제 환경: REST API에서 메뉴 데이터 로드
+        async function loadMenuData() {
+            try {
+                // 실제 API에서 메뉴 데이터 로드
+                const menuData = await fetchMenuData();
+                
+                tabMenuList = menuData.tabMenuList;
+                MENU_CONFIG = buildMenuConfig(menuData.tabMenuList, menuData.menuConfigs);
+                
+                // 동적 탭 메뉴 생성
+                generateTabMenu(tabMenuList);
+                
+                // 동적 폼 생성
+                generateForms(tabMenuList, MENU_CONFIG);
+                
+                // 첫 번째 탭 활성화
+                if (tabMenuList.length > 0) {
+                    const firstMenu = tabMenuList[0];
+                    $('#currentMenuId').val(firstMenu.cl_hiery_ch_cd);
+                    initializeForm(firstMenu.cl_hiery_ch_cd);
+                    updateStatus();
+                }
+                
+                console.log('메뉴 데이터 로드 완료:', MENU_CONFIG);
+                
+            } catch (error) {
+                console.error('메뉴 데이터 로드 실패:', error);
+                // 폴백: 기본 데이터 사용
+                loadFallbackData();
+            }
+        }
+
+        // 실제 API에서 메뉴 데이터 로드
+        async function fetchMenuData() {
+            try {
+                const response = await fetch('/api/menu/list');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('API 호출 실패:', error);
+                // 로컬 테스트용 폴백 데이터
+                return getFallbackMenuData();
+            }
+        }
+
+        // 로컬 테스트용 폴백 데이터 (실제 메뉴 구조만 사용)
+        function getFallbackMenuData() {
+            return {
+                tabMenuList: [
+                    {
+                        "cl_hiery_ch_cd": "2001",
+                        "cl_hiery_ch_nm": "상품요약"
+                    },
+                    {
+                        "cl_hiery_ch_cd": "2002",
+                        "cl_hiery_ch_nm": "상품비교"
+                    },
+                    {
+                        "cl_hiery_ch_cd": "2004",
+                        "cl_hiery_ch_nm": "상품상세"
+                    },
+                    {
+                        "cl_hiery_ch_cd": "2006",
+                        "cl_hiery_ch_nm": "KT카드요약"
+                    }
+                ],
+                menuConfigs: {
+                    '2001': {
+                        elements: {
+                            'productSelect': { type: 'select', defaultValue: '00', label: '상품 선택' }
+                        }
+                    },
+                    '2002': {
+                        elements: {
+                            'sourceProduct': { type: 'select', defaultValue: '00', label: '대상상품' },
+                            'targetProduct': { type: 'select', defaultValue: '00', disabled: true, label: '비교상품' }
+                        }
+                    },
+                    '2004': {
+                        elements: {
+                            'queryInput': { type: 'textarea', defaultValue: '', label: '질문 입력', placeholder: 'KT 상품에 대해 궁금한 점을 입력하세요...' }
+                        }
+                    },
+                    '2006': {
+                        elements: {
+                            'cardSelect': { type: 'select', defaultValue: '00', label: '제휴카드' }
+                        }
+                    }
+                }
+            };
+        }
+
+        // 메뉴 설정 빌드 (API 응답에서 MENU_CONFIG 생성)
+        function buildMenuConfig(tabMenuList, menuConfigs) {
+            const config = {};
+            
+            tabMenuList.forEach(menu => {
+                const menuId = menu.cl_hiery_ch_cd;
+                const menuName = menu.cl_hiery_ch_nm;
+                
+                config[menuId] = {
+                    name: menuName,
+                    elements: menuConfigs[menuId]?.elements || {}
+                };
+            });
+            
+            return config;
+        }
+
+        // 동적 탭 메뉴 생성 (실제 메뉴 구조만 사용)
+        function generateTabMenu(tabMenuList) {
+            const $tabContainer = $('#dynamicTabMenu');
+            $tabContainer.empty();
+            
+            tabMenuList.forEach((menu, index) => {
+                const isFirst = index === 0;
+                const $li = $('<li>');
+                const $a = $('<a>')
+                    .attr('href', '#')
+                    .attr('onclick', `changeTab('${menu.cl_hiery_ch_cd}', '${menu.cl_hiery_ch_nm}', this)`)
+                    .addClass(isFirst ? 'current' : '')
+                    .text(menu.cl_hiery_ch_nm);
+                
+                $li.append($a);
+                $tabContainer.append($li);
+            });
+        }
+
+        // 동적 폼 생성 (실제 메뉴 구조만 사용)
+        function generateForms(tabMenuList, menuConfig) {
+            const $formContainer = $('#dynamicFormContainer');
+            $formContainer.empty();
+            
+            tabMenuList.forEach((menu, index) => {
+                const menuId = menu.cl_hiery_ch_cd;
+                const config = menuConfig[menuId];
+                const isFirst = index === 0;
+                
+                const $form = $('<div>')
+                    .addClass('menu-form')
+                    .addClass(isFirst ? 'active' : '')
+                    .attr('id', `form-${menuId}`);
+                
+                // 폼 요소들 생성
+                if (config && config.elements) {
+                    Object.keys(config.elements).forEach(elementId => {
+                        const elementConfig = config.elements[elementId];
+                        const $formGroup = createFormElement(elementId, elementConfig);
+                        $form.append($formGroup);
+                    });
+                } else {
+                    // 설정이 없으면 기본 메시지 표시
+                    const $emptyMessage = $('<div>')
+                        .addClass('empty-form-message')
+                        .html(`
+                            <p class="text-muted">
+                                ${menu.cl_hiery_ch_nm} 메뉴에 대한 설정 항목이 없습니다.
+                            </p>
+                        `);
+                    $form.append($emptyMessage);
+                }
+                
+                $formContainer.append($form);
+            });
+        }
+
+        // 폼 요소 생성 헬퍼 함수
+        function createFormElement(elementId, config) {
+            const $formGroup = $('<div>').addClass('form-group');
+            const $label = $('<label>')
+                .attr('for', elementId)
+                .text(config.label || elementId);
+            
+            $formGroup.append($label);
+            
+            if (config.type === 'select') {
+                const $select = $('<select>')
+                    .attr('id', elementId)
+                    .attr('onchange', getChangeHandler(elementId))
+                    .prop('disabled', config.disabled || false);
+                
+                // 기본 옵션 추가
+                $select.append($('<option>').val('00').text('선택안함'));
+                
+                // 실제 환경에서는 API에서 옵션 데이터를 받아와야 함
+                // TODO: loadSelectOptions(elementId) 함수로 동적 옵션 로드
+                addSampleOptions($select, elementId);
+                
+                $formGroup.append($select);
+                
+            } else if (config.type === 'textarea') {
+                const $textarea = $('<textarea>')
+                    .attr('id', elementId)
+                    .attr('placeholder', config.placeholder || '')
+                    .attr('oninput', 'updateStatus()');
+                
+                $formGroup.append($textarea);
+                
+            } else if (config.type === 'input') {
+                const $input = $('<input>')
+                    .attr('type', 'text')
+                    .attr('id', elementId)
+                    .attr('placeholder', config.placeholder || '')
+                    .attr('oninput', 'updateStatus()');
+                
+                $formGroup.append($input);
+            }
+            
+            return $formGroup;
+        }
+
+        // change 이벤트 핸들러 결정
+        function getChangeHandler(elementId) {
+            if (elementId === 'sourceProduct') {
+                return 'handleSourceChange()';
+            }
+            return 'updateStatus()';
+        }
+
+        // 샘플 옵션 추가 (실제 환경에서는 API에서 로드)
+        function addSampleOptions($select, elementId) {
+            const sampleData = {
+                'productSelect': [
+                    { value: 'PROD001', text: 'KT 5G 플랜 A' },
+                    { value: 'PROD002', text: 'KT 5G 플랜 B' },
+                    { value: 'PROD003', text: 'KT WiFi 상품' }
+                ],
+                'sourceProduct': [
+                    { value: 'PROD001', text: 'KT 5G 플랜 A' },
+                    { value: 'PROD002', text: 'KT 5G 플랜 B' },
+                    { value: 'PROD003', text: 'KT WiFi 상품' }
+                ],
+                'targetProduct': [
+                    { value: 'PROD001', text: 'KT 5G 플랜 A' },
+                    { value: 'PROD002', text: 'KT 5G 플랜 B' },
+                    { value: 'PROD003', text: 'KT WiFi 상품' }
+                ],
+                'cardSelect': [
+                    { value: 'CARD001', text: 'KT 알파 카드' },
+                    { value: 'CARD002', text: 'KT 멤버십 카드' },
+                    { value: 'CARD003', text: 'KT Y 카드' }
+                ]
+            };
+            
+            const options = sampleData[elementId] || [];
+            options.forEach(option => {
+                $select.append($('<option>').val(option.value).text(option.text));
+            });
+        }
+
+        // 폴백 데이터 로드 (API 실패 시)
+        function loadFallbackData() {
+            console.warn('API 로드 실패, 폴백 데이터 사용');
+            
+            const fallbackData = getFallbackMenuData();
+            tabMenuList = fallbackData.tabMenuList;
+            MENU_CONFIG = buildMenuConfig(fallbackData.tabMenuList, fallbackData.menuConfigs);
+            
+            generateTabMenu(tabMenuList);
+            generateForms(tabMenuList, MENU_CONFIG);
+            
+            if (tabMenuList.length > 0) {
+                const firstMenu = tabMenuList[0];
+                $('#currentMenuId').val(firstMenu.cl_hiery_ch_cd);
+                initializeForm(firstMenu.cl_hiery_ch_cd);
+                updateStatus();
+            }
+        }
+        function changeTab(menuId, menuName, tabElement) {
+            // 1. 탭 스타일 업데이트
+            $('.tab-menu a').removeClass('current');
+            $(tabElement).addClass('current');
+            
+            // 2. 현재 메뉴 ID 저장
+            $('#currentMenuId').val(menuId);
+            
+            // 3. 폼 전환
+            $('.menu-form').removeClass('active');
+            $(`#form-${menuId}`).addClass('active');
+            
+            // 4. 핵심 개선: 설정 기반 초기화
+            initializeForm(menuId);
+            
+            // 5. 상태 업데이트
+            updateStatus();
+            
+            console.log(`탭 변경: ${menuName} (${menuId})`);
+        }
+
+        // 핵심 개선: 설정 기반 폼 초기화
+        function initializeForm(menuId) {
+            const config = MENU_CONFIG[menuId];
+            if (!config) return;
+            
+            Object.keys(config.elements).forEach(elementId => {
+                const elementConfig = config.elements[elementId];
+                const $element = $('#' + elementId);
+                
+                if ($element.length > 0) {
+                    // 기본값 설정
+                    $element.val(elementConfig.defaultValue);
+                    
+                    // 비활성화 상태 설정
+                    $element.prop('disabled', elementConfig.disabled || false);
+                }
+            });
+        }
+
+        // 상품비교 의존성 처리
+        function handleSourceChange() {
+            const sourceValue = $('#sourceProduct').val();
+            const $targetSelect = $('#targetProduct');
+            
+            if (sourceValue === '00') {
+                $targetSelect.prop('disabled', true).val('00');
+            } else {
+                $targetSelect.prop('disabled', false);
+            }
+            
+            updateStatus();
+        }
+
+        // 핵심 개선: DOM에서 직접 값 읽기
+        function getCurrentValues() {
+            const currentMenuId = $('#currentMenuId').val();
+            const $currentForm = $(`#form-${currentMenuId}`);
+            const values = [];
+            
+            $currentForm.find('select, input, textarea').each(function() {
+                const $element = $(this);
+                const value = $element.val().trim();
+                if (value && value !== '00') {
+                    const text = $element.find('option:selected').text() || value;
+                    values.push(`${this.id}: ${text}`);
+                }
+            });
+            
+            return values;
+        }
+
+        // 핵심 개선: DOM 기반 페이로드 생성
+        function generatePayload() {
+            const currentMenuId = $('#currentMenuId').val();
+            const config = MENU_CONFIG[currentMenuId];
+            
+            if (currentMenuId === '2001') {
+                const $productSelect = $('#productSelect');
+                const selectedProduct = $productSelect.val() !== '00' ? {
+                    id: $productSelect.val(),
+                    name: $productSelect.find('option:selected').text()
+                } : null;
+                
+                return {
+                    menuId: currentMenuId,
+                    menuName: config.name,
+                    data: {
+                        products: selectedProduct ? [selectedProduct] : []
+                    }
+                };
+            } else if (currentMenuId === '2002') {
+                const $sourceSelect = $('#sourceProduct');
+                const $targetSelect = $('#targetProduct');
+                
+                return {
+                    menuId: currentMenuId,
+                    menuName: config.name,
+                    data: {
+                        sourceProduct: $sourceSelect.val() !== '00' ? {
+                            id: $sourceSelect.val(),
+                            name: $sourceSelect.find('option:selected').text()
+                        } : null,
+                        targetProduct: $targetSelect.val() !== '00' ? {
+                            id: $targetSelect.val(),
+                            name: $targetSelect.find('option:selected').text()
+                        } : null
+                    }
+                };
+            } else if (currentMenuId === '2004') {
+                return {
+                    menuId: currentMenuId,
+                    menuName: config.name,
+                    data: {
+                        query: $('#queryInput').val().trim()
+                    }
+                };
+            } else if (currentMenuId === '2006') {
+                const $cardSelect = $('#cardSelect');
+                return {
+                    menuId: currentMenuId,
+                    menuName: config.name,
+                    data: {
+                        cardCode: $cardSelect.val() !== '00' ? $cardSelect.val() : null,
+                        cardName: $cardSelect.val() !== '00' ? $cardSelect.find('option:selected').text() : null
+                    }
+                };
+            }
+            
+            return { menuId: currentMenuId, menuName: config.name, data: {} };
+        }
+
+        // 실시간 상태 업데이트
+        function updateStatus() {
+            const currentMenuId = $('#currentMenuId').val();
+            const config = MENU_CONFIG[currentMenuId];
+            const values = getCurrentValues();
+            
+            $('#currentMenu').text(config.name);
+            $('#currentValues').text(values.length > 0 ? values.join(', ') : '없음');
+        }
+
+        // 페이로드 표시 (개선: 유효성 검증 포함)
+        function showPayload() {
+            const payload = generatePayload();
+            const validation = validatePayload();
+            const $display = $('#payloadDisplay');
+            
+            let displayText = JSON.stringify(payload, null, 2);
+            
+            // 유효성 검증 결과 추가
+            if (!validation.isValid) {
+                displayText += '\n\n❌ 오류:\n' + validation.errors.join('\n');
+            }
+            if (validation.warnings.length > 0) {
+                displayText += '\n\n⚠️ 경고:\n' + validation.warnings.join('\n');
+            }
+            if (validation.isValid && validation.warnings.length === 0) {
+                displayText += '\n\n✅ 페이로드가 올바르게 생성되었습니다';
+            }
+            
+            $display.text(displayText).show();
+        }
+
+        // 전체 초기화
+        function clearAll() {
+            const currentMenuId = $('#currentMenuId').val();
+            initializeForm(currentMenuId);
+            updateStatus();
+            $('#payloadDisplay').hide();
+            console.log('전체 초기화 완료');
+        }
+
+        // 초기화 - 실제 환경: API에서 메뉴 데이터 로드
+        $(document).ready(function() {
+            console.log('동적 메뉴 시스템 시작...');
+            loadMenuData(); // API에서 메뉴 데이터 로드
+        });
+
+        // 개선: 자동 동기화 기능 추가
+        let autoSyncEnabled = false;
+
+        function toggleAutoSync() {
+            autoSyncEnabled = !autoSyncEnabled;
+            $('#autoSyncStatus').text(autoSyncEnabled ? 'ON' : 'OFF');
+            
+            if (autoSyncEnabled) {
+                // 자동 동기화 시작 - 실시간 페이로드 업데이트
+                showPayload();
+                console.log('자동 동기화 활성화');
+            } else {
+                // 자동 동기화 종료
+                $('#payloadDisplay').hide();
+                console.log('자동 동기화 비활성화');
+            }
+        }
+
+        // 개선: updateStatus에 자동 페이로드 업데이트 추가
+        function updateStatus() {
+            const currentMenuId = $('#currentMenuId').val();
+            const config = MENU_CONFIG[currentMenuId];
+            const values = getCurrentValues();
+            
+            $('#currentMenu').text(config.name);
+            $('#currentValues').text(values.length > 0 ? values.join(', ') : '없음');
+            
+            // 자동 동기화가 활성화된 경우 페이로드도 자동 업데이트
+            if (autoSyncEnabled) {
+                const payload = generatePayload();
+                $('#payloadDisplay').text(JSON.stringify(payload, null, 2)).show();
+            }
+        }
+
+        // 개선: 페이로드 유효성 검증 기능 추가
+        function validatePayload() {
+            try {
+                const payload = generatePayload();
+                const validation = {
+                    isValid: true,
+                    errors: [],
+                    warnings: []
+                };
+
+                // 기본 구조 검증
+                if (!payload.menuId || !payload.menuName) {
+                    validation.isValid = false;
+                    validation.errors.push('메뉴 정보가 누락되었습니다');
+                }
+
+                // 메뉴별 데이터 검증
+                if (payload.menuId === '2002') {
+                    // 상품비교: 대상상품은 있는데 비교상품이 없는 경우
+                    if (payload.data.sourceProduct && !payload.data.targetProduct) {
+                        validation.warnings.push('비교상품을 선택하면 더 완전한 비교가 가능합니다');
+                    }
+                } else if (payload.menuId === '2004') {
+                    // 상품상세: 질문이 너무 짧은 경우
+                    if (payload.data.query && payload.data.query.length < 3) {
+                        validation.warnings.push('더 구체적인 질문을 입력해주세요');
+                    }
+                }
+
+                return validation;
+            } catch (error) {
+                return {
+                    isValid: false,
+                    errors: [`페이로드 생성 오류: ${error.message}`],
+                    warnings: []
+                };
+            }
+        }
+    </script>
+</body>
+</html>

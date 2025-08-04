@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTTP Utility 버전 정보</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="js/ajax-util.js"></script>
+    <style>
+        body { 
+            font-family: 'Courier New', monospace; 
+            margin: 20px; 
+            background: #f8f9fa;
+            line-height: 1.6;
+        }
+        .container { 
+            max-width: 800px; 
+            margin: 0 auto; 
+            background: white; 
+            padding: 30px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .version-info { 
+            background: #2d3748; 
+            color: #e2e8f0; 
+            padding: 20px; 
+            border-radius: 8px; 
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+        .version-card {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        .feature-list li {
+            background: #e3f2fd;
+            margin: 5px 0;
+            padding: 8px 12px;
+            border-left: 4px solid #2196f3;
+            border-radius: 4px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        .highlight {
+            background: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 HTTP Utility 버전 정보</h1>
+        
+        <div class="version-card">
+            <h2>📋 현재 버전 정보</h2>
+            <div id="version-display"></div>
+            
+            <div style="margin-top: 20px;">
+                <button onclick="showVersionInfo()">버전 정보 표시</button>
+                <button onclick="showConsoleVersion()">콘솔에 버전 출력</button>
+                <button onclick="showJsonVersion()">JSON 형태로 보기</button>
+            </div>
+        </div>
+        
+        <div class="version-card">
+            <h2>💻 콘솔 출력</h2>
+            <p>브라우저 개발자 도구의 콘솔을 확인해보세요:</p>
+            <div class="version-info" id="console-output">
+                <!-- 콘솔 출력이 여기에 표시됩니다 -->
+            </div>
+        </div>
+        
+        <div class="version-card">
+            <h2>🚀 사용법 가이드</h2>
+            
+            <h3>1. 간단한 버전 확인</h3>
+            <div class="code-block">
+console.log($.http.version);  // "1.0.0"
+            </div>
+            
+            <h3>2. 상세 정보 객체 가져오기</h3>
+            <div class="code-block">
+const info = $.http.getVersion();
+console.log(info);
+/*
+{
+    version: "1.0.0",
+    buildDate: "2025-08-01", 
+    author: "UI-Generator Team",
+    features: [...]
+}
+*/
+            </div>
+            
+            <h3>3. 예쁜 형태로 콘솔 출력</h3>
+            <div class="code-block">
+$.http.printVersion();
+// 콘솔에 박스 형태로 예쁘게 출력됩니다
+            </div>
+            
+            <h3>4. 런타임에서 호환성 확인</h3>
+            <div class="code-block">
+// 최소 버전 확인
+function checkMinVersion(minVersion) {
+    const current = $.http.version;
+    const [curMajor, curMinor, curPatch] = current.split('.').map(Number);
+    const [minMajor, minMinor, minPatch] = minVersion.split('.').map(Number);
+    
+    if (curMajor > minMajor) return true;
+    if (curMajor === minMajor && curMinor > minMinor) return true;
+    if (curMajor === minMajor && curMinor === minMinor && curPatch >= minPatch) return true;
+    
+    return false;
+}
+
+if (checkMinVersion('1.0.0')) {
+    console.log('호환 가능한 버전입니다!');
+} else {
+    console.warn('버전을 업데이트해주세요.');
+}
+            </div>
+        </div>
+        
+        <div class="version-card">
+            <h2>📚 버전 히스토리 (예정)</h2>
+            <ul>
+                <li><span class="highlight">v1.0.0</span> (2025-08-01) - 초기 릴리스
+                    <ul>
+                        <li>기본 HTTP 메서드 지원 (GET, POST, PUT, PATCH, DELETE)</li>
+                        <li>Promise/async-await 지원</li>
+                        <li>내장 로딩 화면 기능</li>
+                        <li>커스텀 로딩 함수 지원</li>
+                        <li>30초 기본 타임아웃</li>
+                        <li>버전 정보 확인 기능</li>
+                    </ul>
+                </li>
+                <li><span class="highlight">v1.1.0</span> (예정) - 기능 확장
+                    <ul>
+                        <li>파일 업로드 전용 메서드</li>
+                        <li>진행률 표시 기능</li>
+                        <li>요청 캔슬 기능</li>
+                    </ul>
+                </li>
+                <li><span class="highlight">v2.0.0</span> (예정) - 메이저 업데이트
+                    <ul>
+                        <li>TypeScript 지원</li>
+                        <li>인터셉터 기능</li>
+                        <li>요청/응답 변환기</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // 페이지 로드 시 자동으로 버전 정보 표시
+        $(document).ready(function() {
+            console.log('='.repeat(60));
+            console.log('HTTP Utility 로드됨');
+            console.log('간단한 버전 확인: $.http.version');
+            console.log('상세 정보: $.http.getVersion()');
+            console.log('예쁜 출력: $.http.printVersion()');
+            console.log('='.repeat(60));
+            
+            showVersionInfo();
+        });
+        
+        // 버전 정보 표시
+        function showVersionInfo() {
+            const info = $.http.getVersion();
+            const html = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 15px 0;">
+                    <div>
+                        <strong>버전:</strong> ${info.version}<br>
+                        <strong>빌드 날짜:</strong> ${info.buildDate}<br>
+                        <strong>개발자:</strong> ${info.author}
+                    </div>
+                    <div>
+                        <strong>주요 기능:</strong>
+                        <ul class="feature-list">
+                            ${info.features.map(feature => `<li>${feature}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+            `;
+            $('#version-display').html(html);
+        }
+        
+        // 콘솔에 예쁘게 출력
+        function showConsoleVersion() {
+            const info = $.http.printVersion();
+            
+            // 웹페이지에도 동일한 형태로 표시
+            const consoleText = `
+╔══════════════════════════════════════════════════════════════╗
+║                    HTTP Utility Library                     ║
+╠══════════════════════════════════════════════════════════════╣
+║ Version: ${info.version.padEnd(51)} ║
+║ Build Date: ${info.buildDate.padEnd(48)} ║
+║ Author: ${info.author.padEnd(52)} ║
+╠══════════════════════════════════════════════════════════════╣
+║ Features:                                                    ║
+${info.features.map(feature => `║ • ${feature.padEnd(57)} ║`).join('\n')}
+╚══════════════════════════════════════════════════════════════╝
+            `;
+            
+            $('#console-output').html(`<pre>${consoleText}</pre>`);
+            
+            alert('콘솔 출력 완료! F12를 눌러 개발자 도구에서 확인하세요.');
+        }
+        
+        // JSON 형태로 표시
+        function showJsonVersion() {
+            const info = $.http.getVersion();
+            const jsonString = JSON.stringify(info, null, 2);
+            
+            const html = `
+                <h4>JSON 형태 버전 정보:</h4>
+                <div class="code-block">
+                    <pre>${jsonString}</pre>
+                </div>
+                <p><strong>복사용 코드:</strong></p>
+                <div class="code-block">
+                    <code>const versionInfo = $.http.getVersion();</code>
+                </div>
+            `;
+            
+            $('#version-display').html(html);
+            
+            // 클립보드에 복사
+            navigator.clipboard.writeText(jsonString).then(() => {
+                console.log('버전 정보가 클립보드에 복사되었습니다.');
+            });
+        }
+        
+        // 호환성 확인 함수 예제
+        function checkMinVersion(minVersion) {
+            const current = $.http.version;
+            const [curMajor, curMinor, curPatch] = current.split('.').map(Number);
+            const [minMajor, minMinor, minPatch] = minVersion.split('.').map(Number);
+            
+            if (curMajor > minMajor) return true;
+            if (curMajor === minMajor && curMinor > minMinor) return true;
+            if (curMajor === minMajor && curMinor === minMinor && curPatch >= minPatch) return true;
+            
+            return false;
+        }
+        
+        // 사용 예제들
+        console.log('=== HTTP Utility 버전 확인 예제 ===');
+        console.log('1. 간단한 버전:', $.http.version);
+        console.log('2. 상세 정보:', $.http.getVersion());
+        console.log('3. 호환성 확인 (1.0.0 이상):', checkMinVersion('1.0.0'));
+        console.log('4. 호환성 확인 (2.0.0 이상):', checkMinVersion('2.0.0'));
+    </script>
+</body>
+</html>

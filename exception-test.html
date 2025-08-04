@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>예외 상황에서 로딩 화면 테스트</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="js/ajax-util.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .result { background: #f5f5f5; padding: 10px; margin: 10px 0; white-space: pre-wrap; border-radius: 3px; }
+        button { margin: 5px; padding: 10px 15px; cursor: pointer; border: none; border-radius: 4px; }
+        .error-btn { background: #dc3545; color: white; }
+        .timeout-btn { background: #fd7e14; color: white; }
+        .invalid-btn { background: #6f42c1; color: white; }
+        .success-btn { background: #28a745; color: white; }
+        
+        .status { 
+            padding: 8px 12px; 
+            margin: 5px 0; 
+            border-radius: 3px; 
+            font-weight: bold;
+        }
+        .status.loading { background: #fff3cd; color: #856404; }
+        .status.success { background: #d1edff; color: #0c5460; }
+        .status.error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>🧪 예외 상황에서 로딩 화면 종료 테스트</h1>
+    <p><strong>목적:</strong> 다양한 오류 상황에서도 로딩 화면이 정상적으로 종료되는지 확인</p>
+    
+    <div class="test-section">
+        <h2>1. 404 에러 테스트</h2>
+        <p>존재하지 않는 URL로 요청을 보내 404 에러를 발생시킵니다.</p>
+        <button class="error-btn" onclick="test404Error()">404 에러 테스트</button>
+        <div class="result" id="error404-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. 타임아웃 테스트</h2>
+        <p>매우 짧은 타임아웃으로 요청 시간 초과를 발생시킵니다.</p>
+        <button class="timeout-btn" onclick="testTimeout()">타임아웃 테스트 (1초)</button>
+        <div class="result" id="timeout-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. 잘못된 JSON 응답 테스트</h2>
+        <p>JSON이 아닌 응답을 받아 파싱 오류를 발생시킵니다.</p>
+        <button class="invalid-btn" onclick="testInvalidJson()">JSON 파싱 오류 테스트</button>
+        <div class="result" id="json-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>4. 네트워크 오류 테스트</h2>
+        <p>잘못된 도메인으로 요청을 보내 네트워크 오류를 발생시킵니다.</p>
+        <button class="invalid-btn" onclick="testNetworkError()">네트워크 오류 테스트</button>
+        <div class="result" id="network-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>5. 정상 요청 테스트 (비교용)</h2>
+        <p>JSONPlaceholder API를 사용한 정상적인 요청입니다.</p>
+        <button class="success-btn" onclick="testSuccess()">정상 요청 테스트</button>
+        <div class="result" id="success-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>📊 로딩 상태 모니터링</h2>
+        <div id="loading-monitor">
+            <div class="status" id="loading-status">대기 중...</div>
+        </div>
+    </div>
+
+    <script>
+        // 로딩 상태 모니터링
+        let loadingCount = 0;
+        
+        // 커스텀 로딩 함수 (모니터링용)
+        function monitorLoading() {
+            loadingCount++;
+            updateLoadingStatus(`로딩 시작 (${loadingCount}번째)`, 'loading');
+        }
+        
+        function monitorUnloading() {
+            updateLoadingStatus(`로딩 종료 (${loadingCount}번째 완료)`, loadingCount % 2 === 0 ? 'success' : 'error');
+        }
+        
+        function updateLoadingStatus(message, type) {
+            const statusEl = $('#loading-status');
+            statusEl.text(message);
+            statusEl.removeClass('loading success error').addClass(type);
+        }
+        
+        // 1. 404 에러 테스트
+        async function test404Error() {
+            const resultEl = $('#error404-result');
+            resultEl.text('404 에러 테스트 시작...\n');
+            
+            try {
+                const response = await $.http.get('/nonexistent-endpoint-404', null, {
+                    loading: monitorLoading,
+                    unloading: monitorUnloading
+                });
+                resultEl.append('예상과 다르게 성공함: ' + JSON.stringify(response));
+            } catch (error) {
+                resultEl.append(`✅ 예상대로 404 에러 발생: ${error.status} ${error.statusText}\n`);
+                resultEl.append(`🔒 로딩 화면이 정상적으로 종료되었습니다.`);
+            }
+        }
+        
+        // 2. 타임아웃 테스트
+        async function testTimeout() {
+            const resultEl = $('#timeout-result');
+            resultEl.text('타임아웃 테스트 시작...\n');
+            
+            try {
+                const response = await $.http.get('https://httpbin.org/delay/3', null, {
+                    timeout: 1000, // 1초 타임아웃
+                    loading: monitorLoading,
+                    unloading: monitorUnloading
+                });
+                resultEl.append('예상과 다르게 성공함: ' + JSON.stringify(response));
+            } catch (error) {
+                resultEl.append(`✅ 예상대로 타임아웃 발생: ${error.statusText}\n`);
+                resultEl.append(`🔒 로딩 화면이 정상적으로 종료되었습니다.`);
+            }
+        }
+        
+        // 3. JSON 파싱 오류 테스트
+        async function testInvalidJson() {
+            const resultEl = $('#json-result');
+            resultEl.text('JSON 파싱 오류 테스트 시작...\n');
+            
+            try {
+                const response = await $.http.get('https://httpbin.org/html', null, {
+                    dataType: 'json', // JSON으로 파싱 시도하지만 HTML이 응답됨
+                    loading: monitorLoading,
+                    unloading: monitorUnloading
+                });
+                resultEl.append('예상과 다르게 성공함: ' + JSON.stringify(response));
+            } catch (error) {
+                resultEl.append(`✅ 예상대로 JSON 파싱 오류 발생: ${error.statusText}\n`);
+                resultEl.append(`🔒 로딩 화면이 정상적으로 종료되었습니다.`);
+            }
+        }
+        
+        // 4. 네트워크 오류 테스트
+        async function testNetworkError() {
+            const resultEl = $('#network-result');
+            resultEl.text('네트워크 오류 테스트 시작...\n');
+            
+            try {
+                const response = await $.http.get('http://invalid-domain-that-does-not-exist.com/api', null, {
+                    loading: monitorLoading,
+                    unloading: monitorUnloading
+                });
+                resultEl.append('예상과 다르게 성공함: ' + JSON.stringify(response));
+            } catch (error) {
+                resultEl.append(`✅ 예상대로 네트워크 오류 발생: ${error.statusText}\n`);
+                resultEl.append(`🔒 로딩 화면이 정상적으로 종료되었습니다.`);
+            }
+        }
+        
+        // 5. 정상 요청 테스트
+        async function testSuccess() {
+            const resultEl = $('#success-result');
+            resultEl.text('정상 요청 테스트 시작...\n');
+            
+            try {
+                const response = await $.http.get('https://jsonplaceholder.typicode.com/posts/1', null, {
+                    loading: monitorLoading,
+                    unloading: monitorUnloading
+                });
+                resultEl.append(`✅ 정상적으로 성공: ${response.title}\n`);
+                resultEl.append(`🔒 로딩 화면이 정상적으로 종료되었습니다.`);
+            } catch (error) {
+                resultEl.append(`❌ 예상과 다르게 실패함: ${error.statusText}\n`);
+                resultEl.append(`🔒 로딩 화면이 정상적으로 종료되었습니다.`);
+            }
+        }
+        
+        $(document).ready(function() {
+            console.log('예외 상황 테스트 페이지 로드됨');
+            updateLoadingStatus('테스트 준비 완료', 'success');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTTP Utility 테스트</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="js/ajax-util.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .result { background: #f5f5f5; padding: 10px; margin: 10px 0; white-space: pre-wrap; }
+        button { margin: 5px; padding: 8px 15px; cursor: pointer; }
+        textarea { width: 100%; height: 80px; margin: 10px 0; }
+        .method-btn { background: #007bff; color: white; border: none; border-radius: 4px; }
+        .async-btn { background: #28a745; color: white; border: none; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>HTTP Utility 테스트</h1>
+    
+    <div class="test-section">
+        <h2>1. 기본 HTTP 메서드 테스트</h2>
+        <input type="text" id="basic-url" value="/api/test" placeholder="URL 입력" style="width: 300px;">
+        <textarea id="basic-data" placeholder='{"name": "test", "value": 123}'></textarea>
+        <button class="method-btn" onclick="testGet()">GET</button>
+        <button class="method-btn" onclick="testPost()">POST</button>
+        <button class="method-btn" onclick="testPut()">PUT</button>
+        <button class="method-btn" onclick="testPatch()">PATCH</button>
+        <button class="method-btn" onclick="testDelete()">DELETE</button>
+        <div class="result" id="basic-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. Promise/then 방식 테스트</h2>
+        <input type="text" id="promise-url" value="/wi/ai/askByRest" placeholder="URL 입력" style="width: 300px;">
+        <textarea id="promise-data" placeholder="Promise 테스트 데이터">{
+  "common": {
+    "iid": "2001",
+    "user": "test_user", 
+    "req": "promise_test_123",
+    "type": "rest"
+  },
+  "query": {
+    "note": "Promise 테스트"
+  }
+}</textarea>
+        <button class="method-btn" onclick="testPromise()">Promise/then 테스트</button>
+        <div class="result" id="promise-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. async/await 방식 테스트</h2>
+        <input type="text" id="async-url" value="/api/cache/get" placeholder="URL 입력" style="width: 300px;">
+        <textarea id="async-data" placeholder="async/await 테스트 데이터">{
+  "common": {
+    "iid": "2001.cache.get",
+    "user": "test_user",
+    "req": "async_test_123"
+  },
+  "query": {
+    "note": "async/await 테스트",
+    "key": "test_key"
+  }
+}</textarea>
+        <button class="async-btn" onclick="testAsync()">async/await 테스트</button>
+        <div class="result" id="async-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>4. 기존 코드 마이그레이션 예제</h2>
+        <button onclick="showMigrationExample()">마이그레이션 예제 보기</button>
+        <div class="result" id="migration-result"></div>
+    </div>
+
+    <script>
+        // GET 테스트
+        function testGet() {
+            const url = $('#basic-url').val();
+            
+            $.http.get(url)
+                .then(function(response) {
+                    $('#basic-result').text('GET 성공:\n' + JSON.stringify(response, null, 2));
+                })
+                .catch(function(xhr) {
+                    $('#basic-result').text('GET 오류:\n' + 
+                        'Status: ' + xhr.status + '\n' +
+                        'Error: ' + xhr.statusText + '\n' +
+                        'Response: ' + xhr.responseText);
+                });
+        }
+        
+        // POST 테스트
+        function testPost() {
+            const url = $('#basic-url').val();
+            const data = parseJsonData('#basic-data');
+            
+            if (data === null) return;
+            
+            $.http.post(url, data)
+                .then(function(response) {
+                    $('#basic-result').text('POST 성공:\n' + JSON.stringify(response, null, 2));
+                })
+                .catch(function(xhr) {
+                    $('#basic-result').text('POST 오류:\n' + 
+                        'Status: ' + xhr.status + '\n' +
+                        'Error: ' + xhr.statusText);
+                });
+        }
+        
+        // PUT 테스트
+        function testPut() {
+            const url = $('#basic-url').val();
+            const data = parseJsonData('#basic-data');
+            
+            if (data === null) return;
+            
+            $.http.put(url, data)
+                .then(response => {
+                    $('#basic-result').text('PUT 성공:\n' + JSON.stringify(response, null, 2));
+                })
+                .catch(xhr => {
+                    $('#basic-result').text('PUT 오류:\n' + xhr.statusText);
+                });
+        }
+        
+        // PATCH 테스트
+        function testPatch() {
+            const url = $('#basic-url').val();
+            const data = parseJsonData('#basic-data');
+            
+            if (data === null) return;
+            
+            $.http.patch(url, data)
+                .then(response => {
+                    $('#basic-result').text('PATCH 성공:\n' + JSON.stringify(response, null, 2));
+                })
+                .catch(xhr => {
+                    $('#basic-result').text('PATCH 오류:\n' + xhr.statusText);
+                });
+        }
+        
+        // DELETE 테스트
+        function testDelete() {
+            const url = $('#basic-url').val();
+            
+            $.http.delete(url)
+                .then(response => {
+                    $('#basic-result').text('DELETE 성공:\n' + JSON.stringify(response, null, 2));
+                })
+                .catch(xhr => {
+                    $('#basic-result').text('DELETE 오류:\n' + xhr.statusText);
+                });
+        }
+        
+        // Promise/then 테스트
+        function testPromise() {
+            const url = $('#promise-url').val();
+            const data = parseJsonData('#promise-data');
+            
+            if (data === null) return;
+            
+            $('#promise-result').text('요청 중...');
+            
+            $.http.post(url, data)
+                .then(function(response) {
+                    $('#promise-result').text('Promise 성공:\n' + JSON.stringify(response, null, 2));
+                })
+                .catch(function(xhr) {
+                    $('#promise-result').text('Promise 오류:\n' + xhr.statusText);
+                })
+                .finally(function() {
+                    console.log('Promise 요청 완료');
+                });
+        }
+        
+        // async/await 테스트
+        async function testAsync() {
+            const url = $('#async-url').val();
+            const data = parseJsonData('#async-data');
+            
+            if (data === null) return;
+            
+            $('#async-result').text('async 요청 중...');
+            
+            try {
+                const response = await $.http.post(url, data);
+                $('#async-result').text('async/await 성공:\n' + JSON.stringify(response, null, 2));
+            } catch (xhr) {
+                $('#async-result').text('async/await 오류:\n' + xhr.statusText);
+            }
+        }
+        
+        // JSON 데이터 파싱 헬퍼
+        function parseJsonData(selector) {
+            try {
+                const jsonStr = $(selector).val().trim();
+                return jsonStr ? JSON.parse(jsonStr) : {};
+            } catch (e) {
+                $('#basic-result').text('JSON 파싱 오류: ' + e.message);
+                return null;
+            }
+        }
+        
+        // 마이그레이션 예제 표시
+        function showMigrationExample() {
+            const example = `
+기존 코드:
+function sednAjaxRequest(url, apiRequest, successCallback) {
+    $.ajax({
+        type: 'POST',
+        url: url,
+        contentType: 'application/json;charset=UTF-8',
+        dataType: 'json',
+        data: apiRequest,
+        success: successCallback,
+        error: function(xhr) {
+            console.error("Error:", xhr.statusText);
+        }
+    });
+}
+
+HTTP 유틸리티 - Promise/then:
+$.http.post(url, data)
+    .then(successCallback)
+    .catch(function(xhr) {
+        console.error("Error:", xhr.statusText);
+    });
+
+HTTP 유틸리티 - async/await:
+async function sendRequest() {
+    try {
+        const response = await $.http.post(url, data);
+        successCallback(response);
+    } catch (xhr) {
+        console.error("Error:", xhr.statusText);
+    }
+}
+
+다른 HTTP 메서드들:
+await $.http.get('/api/users');           // GET
+await $.http.post('/api/users', data);    // POST  
+await $.http.put('/api/users/1', data);   // PUT
+await $.http.patch('/api/users/1', data); // PATCH
+await $.http.delete('/api/users/1');      // DELETE
+            `;
+            
+            $('#migration-result').text(example);
+        }
+        
+        $(document).ready(function() {
+            console.log('HTTP Utility 로드됨');
+            console.log('사용 가능한 메서드:', Object.keys($.http));
+        });
+    </script>
+</body>
+</html>
