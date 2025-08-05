@@ -431,7 +431,7 @@
                 <li><a href="#" onclick="tab_change(this)" data-tab="2002" data-display="상품비교">상품비교</a></li>
                 <li><a href="#" onclick="tab_change(this)" data-tab="2004" data-display="상품상세">상품상세</a></li>
                 <li><a href="#" onclick="tab_change(this)" data-tab="2005" data-display="상품상세(요약)">상품상세(요약)</a></li>
-                <li><a href="#" onclick="tab_change(this)" data-tab="2006" data-display="KT카드요약">KT카드요약</a></li>
+                <li><a href="#" onclick="tab_change(this)" data-tab="2006" data-display="T카드요약">T카드요약</a></li>
                 <li><a href="#" onclick="tab_change(this)" data-tab="2007" data-display="복지요약">복지요약</a></li>
                 <li><a href="#" onclick="tab_change(this)" data-tab="2008" data-display="조합상품요약">조합상품요약</a></li>
             </ul>
@@ -482,10 +482,10 @@
                     <label for="productSelect">상품 선택:</label>
                     <select id="productSelect">
                         <option value="00">선택안함</option>
-                        <option value="PROD001">KT 5G 플랜 A</option>
-                        <option value="PROD002">KT 5G 플랜 B</option>
-                        <option value="PROD003">KT WiFi 상품</option>
-                        <option value="PROD004">KT 인터넷 결합</option>
+                        <option value="PROD001">T 5G 플랜 A</option>
+                        <option value="PROD002">T 5G 플랜 B</option>
+                        <option value="PROD003">T WiFi 상품</option>
+                        <option value="PROD004">T 인터넷 결합</option>
                     </select>
                 </div>
 
@@ -494,18 +494,18 @@
                     <label for="sourceProductSelect">대상상품 선택:</label>
                     <select id="sourceProductSelect">
                         <option value="00">선택안함</option>
-                        <option value="PROD001">KT 5G 플랜 A</option>
-                        <option value="PROD002">KT 5G 플랜 B</option>
-                        <option value="PROD003">KT WiFi 상품</option>
-                        <option value="PROD004">KT 인터넷 결합</option>
+                        <option value="PROD001">T 5G 플랜 A</option>
+                        <option value="PROD002">T 5G 플랜 B</option>
+                        <option value="PROD003">T WiFi 상품</option>
+                        <option value="PROD004">T 인터넷 결합</option>
                     </select>
                     <label for="targetProductSelect">비교상품 선택:</label>
                     <select id="targetProductSelect" disabled>
                         <option value="00">선택안함</option>
-                        <option value="PROD001">KT 5G 플랜 A</option>
-                        <option value="PROD002">KT 5G 플랜 B</option>
-                        <option value="PROD003">KT WiFi 상품</option>
-                        <option value="PROD004">KT 인터넷 결합</option>
+                        <option value="PROD001">T 5G 플랜 A</option>
+                        <option value="PROD002">T 5G 플랜 B</option>
+                        <option value="PROD003">T WiFi 상품</option>
+                        <option value="PROD004">T 인터넷 결합</option>
                     </select>
                 </div>
 
@@ -514,21 +514,21 @@
                     <label for="productSummarySelect">상품 목차:</label>
                     <select id="productSummarySelect">
                         <option value="00">선택안함</option>
-                        <option value="PROD001">KT 5G 플랜 A</option>
-                        <option value="PROD002">KT 5G 플랜 B</option>
-                        <option value="PROD003">KT WiFi 상품</option>
-                        <option value="PROD004">KT 인터넷 결합</option>
+                        <option value="PROD001">T 5G 플랜 A</option>
+                        <option value="PROD002">T 5G 플랜 B</option>
+                        <option value="PROD003">T WiFi 상품</option>
+                        <option value="PROD004">T 인터넷 결합</option>
                     </select>
                 </div>
 
-                <!-- KT카드요약 -->
+                <!-- T카드요약 -->
                 <div class="menu-input" id="menu-2006">
                     <label for="cardSelect">제휴카드:</label>
                     <select id="cardSelect">
                         <option value="00">선택안함</option>
-                        <option value="CARD001">KT 알파 카드</option>
-                        <option value="CARD002">KT 멤버십 카드</option>
-                        <option value="CARD003">KT Y 카드</option>
+                        <option value="CARD001">T 알파 카드</option>
+                        <option value="CARD002">T 멤버십 카드</option>
+                        <option value="CARD003">T Y 카드</option>
                     </select>
                 </div>
 
@@ -639,7 +639,7 @@
                 }
             },
             '2006': {
-                name: 'KT카드요약',
+                name: 'T카드요약',
                 elements: {
                     'cardSelect': { 
                         type: 'select', 
@@ -835,12 +835,12 @@
                     const query = payload.query.query;
                     if (query) {
                         return `🤖 "${query}"에 대한 AI 답변<br>
-                                KT 상품에 관한 질문에 대해 상세한 정보를 제공드리겠습니다.`;
+                                T 상품에 관한 질문에 대해 상세한 정보를 제공드리겠습니다.`;
                     }
                     return '질문을 입력해주세요.';
                 },
-                '2006': () => `💳 KT 카드 혜택 정보<br>• 통신비 할인: 월 5,000원<br>• 포인트 적립: 1%`,
-                '2007': () => `🎁 복지 할인 혜택<br>• 할인율: 최대 30%<br>• 적용 대상: 모든 KT 서비스`,
+                '2006': () => `💳 T 카드 혜택 정보<br>• 통신비 할인: 월 5,000원<br>• 포인트 적립: 1%`,
+                '2007': () => `🎁 복지 할인 혜택<br>• 할인율: 최대 30%<br>• 적용 대상: 모든 T 서비스`,
                 '2008': () => `📦 조합상품 혜택<br>• 결합 할인: 월 15,000원<br>• 추가 혜택: 무료 설치`
             };
             
@@ -942,10 +942,10 @@
                     }] : []
                 };
             } else if (body_type === '2006') {
-                // KT카드요약
+                // T카드요약
                 const card = values.cardSelect;
                 return {
-                    note: 'KT카드요약',
+                    note: 'T카드요약',
                     cardCode: card ? card.value : null
                 };
             } else if (body_type === '2007') {

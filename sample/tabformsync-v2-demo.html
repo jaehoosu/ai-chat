@@ -414,6 +414,10 @@
                 <div class="status-label">자동 동기화</div>
                 <div class="status-value" id="autoSyncStatus">OFF</div>
             </div>
+            <div class="status-item">
+                <div class="status-label">페이로드 상태</div>
+                <div class="status-value" id="payloadStatus">대기중</div>
+            </div>
         </div>
         
         <div class="control-buttons">
@@ -496,6 +500,18 @@
             $('#excludedMenus').text(status.excludedMenus);
             $('#autoSyncStatus').text(status.autoSyncEnabled ? 'ON' : 'OFF');
             
+            // 페이로드 상태 업데이트
+            const hasValues = status.currentValues.length > 0;
+            const payloadVisible = $('#payloadDisplay').is(':visible');
+            
+            if (payloadVisible && hasValues) {
+                $('#payloadStatus').text('생성됨').css('color', '#28a745');
+            } else if (hasValues) {
+                $('#payloadStatus').text('대기중').css('color', '#ffc107');
+            } else {
+                $('#payloadStatus').text('비어있음').css('color', '#6c757d');
+            }
+            
             // 숨겨진 메뉴 정보 표시
             if (status.excludedMenus > 0) {
                 const excludedMenus = tabFormSync.menuData
@@ -518,6 +534,7 @@
             const $display = $('#payloadDisplay');
             
             $display.text(JSON.stringify(payload, null, 2)).show();
+            $('#payloadStatus').text('생성됨').css('color', '#28a745');
             addLog('페이로드 생성 완료', 'info');
         }
         
@@ -527,7 +544,17 @@
             
             tabFormSync.reset();
             updateStatus();
+            
+            // 페이로드 표시 영역 숨기기
+            $('#payloadDisplay').hide();
+            $('#payloadStatus').text('초기화됨').css('color', '#17a2b8');
+            
             addLog('폼 초기화 완료', 'info');
+            
+            // 1초 후 대기중으로 변경
+            setTimeout(() => {
+                $('#payloadStatus').text('대기중').css('color', '#ffc107');
+            }, 1000);
         }
         
         // 자동 동기화 토글
@@ -575,13 +602,33 @@
                 tabContainer: '#dynamicTabMenu',
                 formContainer: '#dynamicFormContainer',
                 currentMenuIdField: '#currentMenuIdField',
-                apiEndpoint: '/api/menu/list', // 실제 API 엔드포인트
+                apiEndpoint: 'http://localhost:8080/api/menu/list', // 실제 API 엔드포인트
+                //apiEndpoint: '/api/menu/list', // 실제 API 엔드포인트
                 showLoading: true,
                 
                 // 이벤트 콜백들
                 tabChanged: function(data) {
-                    addLog(`탭 변경: ${data.menuName} (${data.menuId})`, 'info');
+                    addLog(`탭 변경: ${data.menuName} (${data.menuId})${data.payloadReset ? ' - 페이로드 리셋됨' : ''}`, 'info');
                     updateStatus();
+                },
+                
+                payloadReset: function(data) {
+                    addLog(`페이로드 리셋: 메뉴 ${data.menuId}`, 'warn');
+                    
+                    // 페이로드 상태 업데이트
+                    $('#payloadStatus').text('리셋됨').css('color', '#dc3545');
+                    
+                    // 페이로드 표시 영역에 리셋 메시지 표시
+                    const resetMessage = `페이로드가 리셋되었습니다.\n메뉴: ${data.menuId}\n시간: ${new Date(data.timestamp).toLocaleTimeString()}\n\n새로운 메뉴에서 값을 입력하세요.`;
+                    $('#payloadDisplay').text(resetMessage).show();
+                    
+                    // 3초 후 자동으로 숨기기 (자동 동기화가 꺼져있을 때만)
+                    if (!tabFormSync.autoSyncEnabled) {
+                        setTimeout(() => {
+                            $('#payloadDisplay').hide();
+                            $('#payloadStatus').text('대기중').css('color', '#ffc107');
+                        }, 3000);
+                    }
                 },
                 
                 elementChanged: function(data) {
@@ -591,6 +638,7 @@
                 
                 autoSync: function(payload) {
                     $('#payloadDisplay').text(JSON.stringify(payload, null, 2)).show();
+                    addLog('자동 동기화 페이로드 업데이트', 'info');
                 },
                 
                 autoSyncToggled: function(data) {
@@ -616,6 +664,15 @@
         
         $(document).on('tabFormSync:elementChanged', function(e, data) {
             console.log('jQuery 이벤트 - 요소 변경:', data);
+        });
+        
+        $(document).on('tabFormSync:payloadReset', function(e, data) {
+            console.log('jQuery 이벤트 - 페이로드 리셋:', data);
+            // 추가적인 페이로드 리셋 처리가 필요한 경우 여기에 작성
+        });
+        
+        $(document).on('tabFormSync:autoSync', function(e, payload) {
+            console.log('jQuery 이벤트 - 자동 동기화:', payload);
         });
     </script>
 </body>

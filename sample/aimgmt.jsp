@@ -451,7 +451,7 @@
             '2003': '태그정보',
             '2004': '상품상세',
             '2005': '상품상세(요약)',
-            '2006': 'KT카드요약',
+            '2006': 'T카드요약',
             '2007': '복지요약',
             '2008': '조합상품요약'
         };
@@ -569,7 +569,7 @@
                         || result.prodCompare
                         || result.prodDetailSummary
                         || result.prodDetailTitle
-                        || result.ktCardSummary
+                        || result.TCardSummary
                         || result.welfareSummary
                         || result.answer
                         || result.combSummary
@@ -771,10 +771,10 @@
                 products: selectedProducts
             };
         } else if (body_type === '2006') {
-            // KT카드요약
+            // T카드요약
             const cardSelect = $('#cardSelect').val();
             return {
-                note: 'KT카드요약',
+                note: 'T카드요약',
                 cardCode: cardSelect !== '00' ? cardSelect : null
             };
         } else if (body_type === '2007') {
@@ -1338,7 +1338,7 @@
                 <li data-tab="2003" data-display="태그정보" onclick="tab_change(this)">태그정보</li>
                 <li data-tab="2004" data-display="상품상세" onclick="tab_change(this)">상품상세</li>
                 <li data-tab="2005" data-display="상품상세(요약)" onclick="tab_change(this)">상품상세(요약)</li>
-                <li data-tab="2006" data-display="KT카드요약" onclick="tab_change(this)">KT카드요약</li>
+                <li data-tab="2006" data-display="T카드요약" onclick="tab_change(this)">T카드요약</li>
                 <li data-tab="2007" data-display="복지요약" onclick="tab_change(this)">복지요약</li>
                 <li data-tab="2008" data-display="조합상품요약" onclick="tab_change(this)">조합상품요약</li>
             </ul>

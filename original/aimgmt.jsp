@@ -592,7 +592,7 @@
                         || result.prodCompare
                         || result.prodDetailSummary
                         || result.prodDetailTitle
-                        || result.ktCardSummary
+                        || result.TCardSummary
                         || result.welfareSummary
                         || result.answer
                         || result.combSummary
@@ -1328,7 +1328,7 @@
                 <li data-tab="2003" data-display="태그정보" onclick="tab_change(this)">태그정보</li>
                 <li data-tab="2004" data-display="상품상세" onclick="tab_change(this)">상품상세</li>
                 <li data-tab="2005" data-display="상품상세(요약)" onclick="tab_change(this)">상품상세(요약)</li>
-                <li data-tab="2006" data-display="KT카드요약" onclick="tab_change(this)">KT카드요약</li>
+                <li data-tab="2006" data-display="T카드요약" onclick="tab_change(this)">T카드요약</li>
                 <li data-tab="2007" data-display="복지요약" onclick="tab_change(this)">복지요약</li>
                 <li data-tab="2008" data-display="조합상품요약" onclick="tab_change(this)">조합상품요약</li>
             </ul>

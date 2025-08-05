@@ -509,24 +509,24 @@ class TabFormSync {
     addSampleOptions($select, elementId) {
         const sampleData = {
             'productSelect': [
-                { value: 'PROD001', text: 'KT 5G 플랜 A' },
-                { value: 'PROD002', text: 'KT 5G 플랜 B' },
-                { value: 'PROD003', text: 'KT WiFi 상품' }
+                { value: 'PROD001', text: 'T 5G 플랜 A' },
+                { value: 'PROD002', text: 'T 5G 플랜 B' },
+                { value: 'PROD003', text: 'T WiFi 상품' }
             ],
             'sourceProduct': [
-                { value: 'PROD001', text: 'KT 5G 플랜 A' },
-                { value: 'PROD002', text: 'KT 5G 플랜 B' },
-                { value: 'PROD003', text: 'KT WiFi 상품' }
+                { value: 'PROD001', text: 'T 5G 플랜 A' },
+                { value: 'PROD002', text: 'T 5G 플랜 B' },
+                { value: 'PROD003', text: 'T WiFi 상품' }
             ],
             'targetProduct': [
-                { value: 'PROD001', text: 'KT 5G 플랜 A' },
-                { value: 'PROD002', text: 'KT 5G 플랜 B' },
-                { value: 'PROD003', text: 'KT WiFi 상품' }
+                { value: 'PROD001', text: 'T 5G 플랜 A' },
+                { value: 'PROD002', text: 'T 5G 플랜 B' },
+                { value: 'PROD003', text: 'T WiFi 상품' }
             ],
             'cardSelect': [
-                { value: 'CARD001', text: 'KT 알파 카드' },
-                { value: 'CARD002', text: 'KT 멤버십 카드' },
-                { value: 'CARD003', text: 'KT Y 카드' }
+                { value: 'CARD001', text: 'T 알파 카드' },
+                { value: 'CARD002', text: 'T 멤버십 카드' },
+                { value: 'CARD003', text: 'T Y 카드' }
             ],
             'welfareSelect': [
                 { value: 'WF001', text: '복지포인트 할인' },
@@ -569,7 +569,7 @@ class TabFormSync {
                 { "cl_hiery_ch_cd": "2001", "cl_hiery_ch_nm": "상품요약" },
                 { "cl_hiery_ch_cd": "2002", "cl_hiery_ch_nm": "상품비교" },
                 { "cl_hiery_ch_cd": "2004", "cl_hiery_ch_nm": "상품상세" },
-                { "cl_hiery_ch_cd": "2006", "cl_hiery_ch_nm": "KT카드요약" },
+                { "cl_hiery_ch_cd": "2006", "cl_hiery_ch_nm": "T카드요약" },
                 { "cl_hiery_ch_cd": "2007", "cl_hiery_ch_nm": "복지요약" },
                 { "cl_hiery_ch_cd": "2008", "cl_hiery_ch_nm": "결합상품요약" }
             ],
@@ -587,7 +587,7 @@ class TabFormSync {
                 },
                 '2004': {
                     elements: {
-                        'queryInput': { type: 'textarea', defaultValue: '', label: '질문 입력', placeholder: 'KT 상품에 대해 궁금한 점을 입력하세요...' }
+                        'queryInput': { type: 'textarea', defaultValue: '', label: '질문 입력', placeholder: 'T 상품에 대해 궁금한 점을 입력하세요...' }
                     }
                 },
                 '2006': {

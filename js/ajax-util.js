@@ -5,7 +5,7 @@
  * 내장 로딩 화면 지원
  * 
  * @version 1.0.0
- * @author UI-Generator Team
+ * @author jaehoosu
  * @date 2025-08-01
  */
 

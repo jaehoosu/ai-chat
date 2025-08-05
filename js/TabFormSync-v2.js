@@ -4,7 +4,7 @@
  * 실제 데이터: id, name, description, first_ref_text (display ordering)
  * 
  * @version 2.0.0
- * @author UI-Generator Team
+ * @author jaehoosu
  * @date 2025-08-05
  */
 
@@ -119,8 +119,8 @@ class TabFormSync {
             },
             {
                 id: "2006",
-                name: "KT카드요약",
-                description: "KT카드요약정보를 요청합니다.",
+                name: "T카드요약",
+                description: "T카드요약정보를 요청합니다.",
                 first_ref_text: "3"
             }
         ];
@@ -206,11 +206,11 @@ class TabFormSync {
                     type: 'textarea', 
                     defaultValue: '', 
                     label: '질문 입력', 
-                    placeholder: 'KT 상품에 대해 궁금한 점을 입력하세요...',
+                    placeholder: 'T 상품에 대해 궁금한 점을 입력하세요...',
                     required: true
                 }
             },
-            '2006': { // KT카드요약
+            '2006': { // T카드요약
                 'cardSelect': { 
                     type: 'select', 
                     defaultValue: '00', 
@@ -364,24 +364,24 @@ class TabFormSync {
     addSampleOptions($select, elementId) {
         const sampleData = {
             'productSelect': [
-                { value: 'PROD001', text: 'KT 5G 플랜 A' },
-                { value: 'PROD002', text: 'KT 5G 플랜 B' },
-                { value: 'PROD003', text: 'KT WiFi 상품' }
+                { value: 'PROD001', text: 'T 5G 플랜 A' },
+                { value: 'PROD002', text: 'T 5G 플랜 B' },
+                { value: 'PROD003', text: 'T WiFi 상품' }
             ],
             'sourceProduct': [
-                { value: 'PROD001', text: 'KT 5G 플랜 A' },
-                { value: 'PROD002', text: 'KT 5G 플랜 B' },
-                { value: 'PROD003', text: 'KT WiFi 상품' }
+                { value: 'PROD001', text: 'T 5G 플랜 A' },
+                { value: 'PROD002', text: 'T 5G 플랜 B' },
+                { value: 'PROD003', text: 'T WiFi 상품' }
             ],
             'targetProduct': [
-                { value: 'PROD001', text: 'KT 5G 플랜 A' },
-                { value: 'PROD002', text: 'KT 5G 플랜 B' },
-                { value: 'PROD003', text: 'KT WiFi 상품' }
+                { value: 'PROD001', text: 'T 5G 플랜 A' },
+                { value: 'PROD002', text: 'T 5G 플랜 B' },
+                { value: 'PROD003', text: 'T WiFi 상품' }
             ],
             'cardSelect': [
-                { value: 'CARD001', text: 'KT 알파 카드' },
-                { value: 'CARD002', text: 'KT 멤버십 카드' },
-                { value: 'CARD003', text: 'KT Y 카드' }
+                { value: 'CARD001', text: 'T 알파 카드' },
+                { value: 'CARD002', text: 'T 멤버십 카드' },
+                { value: 'CARD003', text: 'T Y 카드' }
             ]
         };
         
@@ -426,8 +426,38 @@ class TabFormSync {
         // 4. 폼 초기화
         this.initializeForm(menuId);
         
-        // 5. 이벤트 발생
-        this.triggerEvent('tabChanged', { menuId, menuName });
+        // 5. 페이로드 리셋 (메뉴 변경 시)
+        this.resetPayloadDisplay();
+        
+        // 6. 이벤트 발생
+        this.triggerEvent('tabChanged', { 
+            menuId, 
+            menuName, 
+            payloadReset: true 
+        });
+        
+        // 7. 자동 동기화가 활성화된 경우 새 메뉴의 페이로드 생성
+        if (this.autoSyncEnabled) {
+            setTimeout(() => {
+                this.triggerEvent('autoSync', this.generatePayload());
+            }, 100); // 폼 초기화 후 페이로드 생성
+        }
+    }
+    
+    /**
+     * 페이로드 표시 영역 리셋
+     */
+    resetPayloadDisplay() {
+        // 페이로드 표시 영역 숨기기
+        if (window.$ && $('#payloadDisplay').length > 0) {
+            $('#payloadDisplay').hide().empty();
+        }
+        
+        // 이벤트 발생 (외부에서 처리할 수 있도록)
+        this.triggerEvent('payloadReset', { 
+            menuId: this.currentMenuId,
+            timestamp: new Date().toISOString()
+        });
     }
     
     /**
@@ -575,7 +605,7 @@ class TabFormSync {
                 query: $('#queryInput').val().trim()
             };
             
-        } else if (menuId === '2006') { // KT카드요약
+        } else if (menuId === '2006') { // T카드요약
             const $cardSelect = $('#cardSelect');
             return {
                 cardCode: $cardSelect.val() !== '00' ? $cardSelect.val() : null,

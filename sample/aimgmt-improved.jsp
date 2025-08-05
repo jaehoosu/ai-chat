@@ -375,7 +375,7 @@
             }
         },
         '2006': {
-            name: 'KT카드요약',
+            name: 'T카드요약',
             elements: {
                 'cardSelect': { 
                     type: 'select', 
@@ -612,7 +612,7 @@
                         || result.prodCompare
                         || result.prodDetailSummary
                         || result.prodDetailTitle
-                        || result.ktCardSummary
+                        || result.TCardSummary
                         || result.welfareSummary
                         || result.answer
                         || result.combSummary
@@ -859,10 +859,10 @@
                 }] : []
             };
         } else if (body_type === '2006') {
-            // KT카드요약
+            // T카드요약
             const card = values.cardSelect;
             return {
-                note: 'KT카드요약',
+                note: 'T카드요약',
                 cardCode: card ? card.value : null
             };
         } else if (body_type === '2007') {

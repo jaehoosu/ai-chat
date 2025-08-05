@@ -195,7 +195,7 @@ const autoSyncEnabled = tabFormSync.toggleAutoSync();
     { id: "2002", name: "상품비교", description: "상품비교정보를 요청합니다.", first_ref_text: "2" },   // 3번째 표시  
     { id: "2003", name: "상품태그", description: "상품태그정보를 요청합니다.", first_ref_text: "-3" }, // 제외됨
     { id: "2004", name: "상품상세", description: "상품상세정보를 요청합니다.", first_ref_text: "1" },   // 2번째 표시
-    { id: "2006", name: "KT카드요약", description: "KT카드요약정보를 요청합니다.", first_ref_text: "3" } // 4번째 표시
+    { id: "2006", name: "T카드요약", description: "T카드요약정보를 요청합니다.", first_ref_text: "3" } // 4번째 표시
 ]
 
 // 결과: 2001 → 2004 → 2002 → 2006 순서로 표시, 2003은 제외
@@ -204,19 +204,105 @@ const autoSyncEnabled = tabFormSync.toggleAutoSync();
 ---
 
 ### 4. PayloadFactory
-페이로드 생성 및 관리를 위한 팩토리 클래스
+UI 데이터를 서버 통신용 메시지로 변환하는 팩토리 클래스
 
-**주요 기능:**
-- 폼 데이터를 API 페이로드로 변환
-- 페이로드 검증
-- 다양한 포맷 지원 (JSON, FormData, URL-encoded)
-- 커스텀 변환 규칙 적용
+**핵심 기능:**
+1. **UI → 서버 메시지 변환**
+   - TabFormSync의 UI 페이로드를 서버 API 스펙에 맞게 변환
+   - 메뉴별 특화된 메시지 body 생성
+   - 표준 메시지 구조 (common, option, query) 지원
+
+2. **서버 통신 표준 포맷**
+   ```javascript
+   // 생성되는 서버 메시지 구조
+   {
+       common: {
+           iid: body_type,      // 메시지 타입
+           user: user_id,       // 사용자 ID
+           req: request_id,     // 요청 ID
+           type: api_type       // API 타입
+       },
+       option: {
+           cache: boolean,      // 캐시 사용 여부
+           stream: boolean,     // 스트리밍 여부
+           tags: array          // 태그 목록
+       },
+       query: {                // 실제 요청 내용
+           action: string,
+           message: string,
+           filters: object
+       }
+   }
+   ```
+
+3. **메뉴별 메시지 변환**
+   - 상품요약: 선택된 상품 정보를 서버 쿼리로 변환
+   - 상품비교: 비교 대상 상품들을 서버 필터로 변환
+   - 상품상세: 사용자 질문을 서버 메시지로 변환
+   - T카드요약: 카드 정보를 서버 필터로 변환
+
+4. **검증 및 디버깅**
+   - 메시지 유효성 검증
+   - 디버깅 정보 제공
+   - 메시지 병합 및 복사 기능
 
 **사용법:**
 ```javascript
-const payload = PayloadFactory.create('json', formData, {
-    validation: true,
-    transform: customTransformRules
+// 기본 사용 (TabFormSync와 연동)
+const uiPayload = tabFormSync.generatePayload();
+const serverMessage = PayloadFactory.createServerMessage(uiPayload, {
+    userId: 'user123',
+    bodyType: 'chat',
+    apiType: 'query',
+    cache: true,
+    stream: false,
+    tags: ['urgent', 'product']
+});
+
+// 빠른 메시지 생성
+const quickMessage = PayloadFactory.quickMessage('2001', formData, {
+    userId: 'user123'
+});
+
+// 메시지 검증
+const validation = PayloadFactory.validateMessage(serverMessage);
+if (validation.isValid) {
+    // HttpUtil로 서버 전송
+    $.http.post('/api/chat', serverMessage)
+        .then(response => console.log('성공:', response))
+        .catch(error => console.error('실패:', error));
+}
+
+// 디버깅
+PayloadFactory.debugMessage(serverMessage);
+```
+
+**TabFormSync와 통합 사용:**
+```javascript
+// 1. UI에서 데이터 수집
+const uiPayload = tabFormSync.generatePayload();
+
+// 2. 서버 메시지로 변환
+const serverMessage = PayloadFactory.createServerMessage(uiPayload, {
+    userId: getCurrentUserId(),
+    cache: false,
+    stream: true
+});
+
+// 3. 검증 후 서버 전송
+const validation = PayloadFactory.validateMessage(serverMessage);
+if (validation.isValid) {
+    await $.http.post('/api/query', serverMessage);
+}
+```
+
+**설정 관리:**
+```javascript
+// 전역 설정 업데이트
+PayloadFactory.updateConfig({
+    defaultUserId: 'production_user',
+    defaultBodyType: 'chat',
+    generateRequestId: () => 'custom_' + Date.now()
 });
 ```
 
