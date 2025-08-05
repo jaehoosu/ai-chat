@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TabFormSync v2.0 - 실제 데이터 구조 데모</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .demo-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .demo-header h2 {
+            margin: 0 0 10px 0;
+            font-size: 24px;
+        }
+
+        .demo-header .version {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            display: inline-block;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .feature-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .feature-item .icon {
+            margin-right: 5px;
+        }
+
+        /* 상태 패널 */
+        .status-panel {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .status-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .status-label {
+            font-weight: bold;
+            font-size: 12px;
+            color: #6c757d;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .status-value {
+            color: #495057;
+            font-size: 14px;
+            word-break: break-word;
+        }
+
+        .status-value.highlight {
+            color: #007bff;
+            font-weight: bold;
+        }
+
+        .control-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #1e7e34;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-warning:hover {
+            background: #e0a800;
+        }
+
+        /* 탭 메뉴 */
+        .tab-menu ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            border-bottom: 2px solid #dee2e6;
+            background: #f8f9fa;
+            border-radius: 8px 8px 0 0;
+            overflow-x: auto;
+        }
+
+        .tab-menu li {
+            flex-shrink: 0;
+        }
+
+        .tab-menu a {
+            display: block;
+            padding: 12px 20px;
+            text-decoration: none;
+            background: transparent;
+            border: none;
+            color: #6c757d;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .tab-menu a:hover {
+            background: rgba(0, 123, 255, 0.1);
+            color: #007bff;
+        }
+
+        .tab-menu a.current {
+            background: #007bff;
+            color: white;
+            font-weight: bold;
+        }
+
+        .tab-menu a.current::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #007bff;
+        }
+
+        /* 폼 컨테이너 */
+        .form-container {
+            border: 1px solid #dee2e6;
+            background: white;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            min-height: 200px;
+        }
+
+        .menu-form {
+            display: none;
+            padding: 20px;
+        }
+
+        .menu-form.active {
+            display: block;
+        }
+
+        .form-description {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            border-radius: 0 4px 4px 0;
+            color: #1565c0;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #495057;
+            font-size: 14px;
+        }
+
+        .form-group select,
+        .form-group textarea,
+        .form-group input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            box-sizing: border-box;
+        }
+
+        .form-group select:focus,
+        .form-group textarea:focus,
+        .form-group input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+
+        .form-group select:disabled,
+        .form-group textarea:disabled,
+        .form-group input:disabled {
+            background-color: #e9ecef;
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .form-group textarea {
+            height: 100px;
+            resize: vertical;
+        }
+
+        .empty-form-message {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        /* 페이로드 표시 */
+        .payload-display {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        /* 로그 패널 */
+        .log-panel {
+            background: #212529;
+            color: #00ff00;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #495057;
+        }
+
+        .log-entry {
+            margin-bottom: 2px;
+            padding: 2px 0;
+        }
+
+        .log-entry.info {
+            color: #00ff00;
+        }
+
+        .log-entry.warn {
+            color: #ffff00;
+        }
+
+        .log-entry.error {
+            color: #ff0000;
+        }
+
+        /* 반응형 */
+        @media (max-width: 768px) {
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .status-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .control-buttons {
+                flex-direction: column;
+            }
+            
+            .tab-menu ul {
+                flex-wrap: nowrap;
+                justify-content: flex-start;
+            }
+        }
+
+        /* 숨겨진 메뉴 정보 툴팁 */
+        .excluded-info {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-header">
+        <h2>🚀 TabFormSync v2.0 <span class="version">Real Data Structure</span></h2>
+        <p>실제 데이터 구조 기반 탭-폼 동기화 시스템</p>
+        
+        <div class="features-grid">
+            <div class="feature-item">
+                <span class="icon">🔢</span>
+                Display Ordering (first_ref_text)
+            </div>
+            <div class="feature-item">
+                <span class="icon">🎯</span>
+                Dynamic Menu Filtering  
+            </div>
+            <div class="feature-item">
+                <span class="icon">🔄</span>
+                Auto Sync & Real-time Update
+            </div>
+            <div class="feature-item">
+                <span class="icon">📊</span>
+                Advanced Status Monitoring
+            </div>
+        </div>
+    </div>
+
+    <!-- 상태 패널 -->
+    <div class="status-panel">
+        <div class="status-grid">
+            <div class="status-item">
+                <div class="status-label">현재 메뉴</div>
+                <div class="status-value highlight" id="currentMenuName">로딩중...</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">메뉴 ID</div>
+                <div class="status-value" id="currentMenuId">-</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">표시 순서</div>
+                <div class="status-value" id="currentOrder">-</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">선택된 값</div>
+                <div class="status-value" id="currentValues">없음</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">전체 메뉴</div>
+                <div class="status-value" id="totalMenus">0</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">표시된 메뉴</div>
+                <div class="status-value" id="displayMenus">0</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">숨겨진 메뉴</div>
+                <div class="status-value" id="excludedMenus">0</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">자동 동기화</div>
+                <div class="status-value" id="autoSyncStatus">OFF</div>
+            </div>
+        </div>
+        
+        <div class="control-buttons">
+            <button class="btn btn-primary" onclick="showPayload()">
+                📋 페이로드 확인
+            </button>
+            <button class="btn btn-secondary" onclick="resetForm()">
+                🔄 폼 초기화
+            </button>
+            <button class="btn btn-success" onclick="toggleAutoSync()">
+                ⚡ 자동동기화 토글
+            </button>
+            <button class="btn btn-warning" onclick="showMenuInfo()">
+                📊 메뉴 정보
+            </button>
+            <button class="btn btn-secondary" onclick="clearLogs()">
+                🗑️ 로그 지우기
+            </button>
+        </div>
+        
+        <div class="payload-display" id="payloadDisplay" style="display: none;"></div>
+    </div>
+
+    <!-- 숨겨진 메뉴 정보 -->
+    <div class="excluded-info" id="excludedInfo" style="display: none;">
+        <strong>숨겨진 메뉴:</strong> <span id="excludedMenuList"></span>
+    </div>
+
+    <!-- 탭 메뉴 (동적 생성) -->
+    <div class="tab-menu">
+        <ul id="dynamicTabMenu">
+            <!-- TabFormSync v2.0으로 동적 생성됨 -->
+        </ul>
+    </div>
+
+    <!-- 숨겨진 현재 메뉴 ID -->
+    <input type="hidden" id="currentMenuIdField" value="">
+
+    <!-- 입력 폼들 (동적 생성) -->
+    <div class="form-container" id="dynamicFormContainer">
+        <!-- TabFormSync v2.0으로 동적 생성됨 -->
+    </div>
+
+    <!-- 로그 패널 -->
+    <div class="log-panel" id="logPanel">
+        <div class="log-entry info">[INFO] TabFormSync v2.0 데모 준비중...</div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="../js/TabFormSync-v2.js"></script>
+    <script>
+        let tabFormSync;
+        
+        // 로그 함수
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const $logPanel = $('#logPanel');
+            const $logEntry = $('<div>')
+                .addClass('log-entry')
+                .addClass(type)
+                .text(`[${timestamp}] [${type.toUpperCase()}] ${message}`);
+            
+            $logPanel.append($logEntry);
+            $logPanel.scrollTop($logPanel[0].scrollHeight);
+        }
+        
+        // 상태 업데이트 함수
+        function updateStatus() {
+            if (!tabFormSync) return;
+            
+            const status = tabFormSync.getStatus();
+            const menuInfo = tabFormSync.getMenuInfo(status.currentMenuId);
+            
+            $('#currentMenuName').text(status.currentMenuName || '없음');
+            $('#currentMenuId').text(status.currentMenuId || '-');
+            $('#currentOrder').text(menuInfo?.order ?? '-');
+            $('#currentValues').text(status.currentValues.length > 0 ? status.currentValues.join(', ') : '없음');
+            $('#totalMenus').text(status.totalMenus);
+            $('#displayMenus').text(status.displayMenus);
+            $('#excludedMenus').text(status.excludedMenus);
+            $('#autoSyncStatus').text(status.autoSyncEnabled ? 'ON' : 'OFF');
+            
+            // 숨겨진 메뉴 정보 표시
+            if (status.excludedMenus > 0) {
+                const excludedMenus = tabFormSync.menuData
+                    .filter(menu => parseInt(menu.first_ref_text) < 0)
+                    .map(menu => `${menu.name}(${menu.id})`)
+                    .join(', ');
+                
+                $('#excludedMenuList').text(excludedMenus);
+                $('#excludedInfo').show();
+            } else {
+                $('#excludedInfo').hide();
+            }
+        }
+        
+        // 페이로드 표시
+        function showPayload() {
+            if (!tabFormSync) return;
+            
+            const payload = tabFormSync.generatePayload();
+            const $display = $('#payloadDisplay');
+            
+            $display.text(JSON.stringify(payload, null, 2)).show();
+            addLog('페이로드 생성 완료', 'info');
+        }
+        
+        // 폼 초기화
+        function resetForm() {
+            if (!tabFormSync) return;
+            
+            tabFormSync.reset();
+            updateStatus();
+            addLog('폼 초기화 완료', 'info');
+        }
+        
+        // 자동 동기화 토글
+        function toggleAutoSync() {
+            if (!tabFormSync) return;
+            
+            const enabled = tabFormSync.toggleAutoSync();
+            updateStatus();
+            addLog(`자동 동기화 ${enabled ? '활성화' : '비활성화'}`, 'info');
+            
+            if (enabled) {
+                showPayload();
+            } else {
+                $('#payloadDisplay').hide();
+            }
+        }
+        
+        // 메뉴 정보 표시
+        function showMenuInfo() {
+            if (!tabFormSync) return;
+            
+            const allMenuInfo = tabFormSync.getMenuInfo();
+            const $display = $('#payloadDisplay');
+            
+            const infoText = Object.keys(allMenuInfo).map(menuId => {
+                const info = allMenuInfo[menuId];
+                return `[${menuId}] ${info.name} (순서: ${info.order})\n설명: ${info.description}`;
+            }).join('\n\n');
+            
+            $display.text(infoText).show();
+            addLog('메뉴 정보 표시', 'info');
+        }
+        
+        // 로그 지우기
+        function clearLogs() {
+            $('#logPanel').empty();
+            addLog('로그 패널 초기화', 'info');
+        }
+        
+        // TabFormSync 초기화
+        $(document).ready(function() {
+            addLog('TabFormSync v2.0 초기화 시작...', 'info');
+            
+            tabFormSync = new TabFormSync({
+                tabContainer: '#dynamicTabMenu',
+                formContainer: '#dynamicFormContainer',
+                currentMenuIdField: '#currentMenuIdField',
+                apiEndpoint: '/api/menu/list', // 실제 API 엔드포인트
+                showLoading: true,
+                
+                // 이벤트 콜백들
+                tabChanged: function(data) {
+                    addLog(`탭 변경: ${data.menuName} (${data.menuId})`, 'info');
+                    updateStatus();
+                },
+                
+                elementChanged: function(data) {
+                    addLog(`요소 변경: ${data.elementId} (메뉴: ${data.menuId})`, 'info');
+                    updateStatus();
+                },
+                
+                autoSync: function(payload) {
+                    $('#payloadDisplay').text(JSON.stringify(payload, null, 2)).show();
+                },
+                
+                autoSyncToggled: function(data) {
+                    addLog(`자동 동기화 ${data.enabled ? '활성화' : '비활성화'}`, 'info');
+                },
+                
+                reset: function(data) {
+                    addLog(`폼 초기화: ${data.menuId}`, 'info');
+                }
+            });
+            
+            // 초기화 완료 후 상태 업데이트
+            setTimeout(() => {
+                updateStatus();
+                addLog('TabFormSync v2.0 초기화 완료', 'info');
+            }, 1000);
+        });
+        
+        // jQuery 이벤트 리스너 (추가적인 이벤트 처리)
+        $(document).on('tabFormSync:tabChanged', function(e, data) {
+            console.log('jQuery 이벤트 - 탭 변경:', data);
+        });
+        
+        $(document).on('tabFormSync:elementChanged', function(e, data) {
+            console.log('jQuery 이벤트 - 요소 변경:', data);
+        });
+    </script>
+</body>
+</html>

@@ -116,49 +116,89 @@ $.http.delete('/api/users/1');
 
 ---
 
-### 3. TabFormSync Plugin
-탭 메뉴와 입력 폼 동기화 플러그인
+### 3. TabFormSync v2.0 Plugin
+실제 데이터 구조 기반 탭 메뉴와 입력 폼 동기화 플러그인
+
+**실제 데이터 구조:**
+```javascript
+// 메뉴 데이터 구조
+{
+    id: "2001",                    // 메뉴 ID
+    name: "상품요약",               // 메뉴 이름  
+    description: "상품요약정보를 요청합니다.",  // 설명
+    first_ref_text: "0"            // 표시 순서 (0부터 순서대로, 음수면 제외)
+}
+```
 
 **핵심 기능:**
-1. **API 기반 메뉴 데이터 로드**
-   - RESTful API에서 메뉴 구조 동적 로드
-   - 다양한 API 응답 형태 지원 (통합/분리/임베디드/단일배열)
-   - 로컬 데이터 지원 (API 대체)
+1. **Display Ordering 시스템**
+   - `first_ref_text` 값으로 화면 표시 순서 결정
+   - 양수(0부터): 순서대로 화면에 표시
+   - 음수: 화면에서 제외 (숨김)
+   - 자동 정렬 및 필터링
 
-2. **동적 탭 메뉴 생성**
-   - 메뉴 데이터 기반 자동 탭 생성
-   - 탭 활성화/비활성화 상태 관리
-   - 커스텀 탭 스타일링 지원
+2. **실제 API 연동**
+   - RESTful API에서 메뉴 데이터 동적 로드
+   - 실제 데이터 구조 기반 처리
+   - 폴백 데이터 지원 (API 실패 시)
 
-3. **동적 입력 폼 생성**
-   - 메뉴별 폼 구성 자동 생성
-   - 다양한 입력 요소 지원 (select, textarea, input)
-   - 폼 검증 및 기본값 설정
+3. **동적 UI 생성**
+   - 실제 메뉴 데이터 기반 탭 메뉴 자동 생성
+   - 메뉴별 설명 표시
+   - 폼 요소 동적 생성 및 검증
 
-4. **탭↔폼 실시간 동기화**
-   - 탭 변경 시 자동 폼 전환
-   - 폼 데이터 상태 동기화
+4. **고급 상태 관리**
+   - 실시간 상태 모니터링
+   - 자동 동기화 기능
    - 이벤트 기반 상호작용
+   - 페이로드 생성 및 검증
 
 **사용법:**
 ```javascript
-// API 기반 사용
+// 기본 사용
 const tabFormSync = new TabFormSync({
-    apiUrl: '/api/menu/list',
-    tabContainer: '#tabContainer',
-    formContainer: '#formContainer'
+    tabContainer: '#dynamicTabMenu',
+    formContainer: '#dynamicFormContainer', 
+    currentMenuIdField: '#currentMenuIdField',
+    apiEndpoint: '/api/menu/list',
+    showLoading: true,
+    
+    // 이벤트 콜백
+    tabChanged: function(data) {
+        console.log('탭 변경:', data.menuName);
+    },
+    elementChanged: function(data) {
+        console.log('요소 변경:', data.elementId);
+    },
+    autoSync: function(payload) {
+        console.log('자동 동기화:', payload);
+    }
 });
 
-// 로컬 데이터 사용
-const tabFormSync = new TabFormSync({
-    useLocalData: true,
-    localMenuData: menuData,
-    localMenuConfigs: menuConfigs,
-    tabContainer: '#tabContainer',
-    formContainer: '#formContainer'
-});
+// 상태 확인
+const status = tabFormSync.getStatus();
+console.log('현재 상태:', status);
 
-tabFormSync.init();
+// 페이로드 생성
+const payload = tabFormSync.generatePayload();
+console.log('페이로드:', payload);
+
+// 자동 동기화 토글
+const autoSyncEnabled = tabFormSync.toggleAutoSync();
+```
+
+**실제 데이터 예시:**
+```javascript
+// API 응답 데이터
+[
+    { id: "2001", name: "상품요약", description: "상품요약정보를 요청합니다.", first_ref_text: "0" },   // 1번째 표시
+    { id: "2002", name: "상품비교", description: "상품비교정보를 요청합니다.", first_ref_text: "2" },   // 3번째 표시  
+    { id: "2003", name: "상품태그", description: "상품태그정보를 요청합니다.", first_ref_text: "-3" }, // 제외됨
+    { id: "2004", name: "상품상세", description: "상품상세정보를 요청합니다.", first_ref_text: "1" },   // 2번째 표시
+    { id: "2006", name: "KT카드요약", description: "KT카드요약정보를 요청합니다.", first_ref_text: "3" } // 4번째 표시
+]
+
+// 결과: 2001 → 2004 → 2002 → 2006 순서로 표시, 2003은 제외
 ```
 
 ---
