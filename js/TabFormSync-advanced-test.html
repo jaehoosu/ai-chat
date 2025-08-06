@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TabFormSync 고급 기능 테스트</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .title {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+        
+        /* 탭 메뉴 스타일 */
+        #tabContainer {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            border-bottom: 2px solid #e9ecef;
+            background: #f8f9fa;
+            border-radius: 8px 8px 0 0;
+            overflow: hidden;
+        }
+
+        #tabContainer li {
+            margin: 0;
+        }
+
+        #tabContainer a {
+            display: block;
+            padding: 15px 25px;
+            text-decoration: none;
+            color: #6c757d;
+            background: #f8f9fa;
+            border: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            font-weight: 500;
+            border-right: 1px solid #e9ecef;
+        }
+
+        #tabContainer a:hover {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        #tabContainer a.current {
+            background: #007bff;
+            color: white;
+            font-weight: 600;
+        }
+
+        /* 폼 컨테이너 스타일 */
+        #formContainer {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            padding: 30px;
+            min-height: 300px;
+        }
+
+        .menu-form {
+            display: none;
+        }
+
+        .menu-form.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #495057;
+            font-size: 14px;
+        }
+
+        .form-group select,
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            max-width: 400px;
+            padding: 12px 15px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .form-group select:focus,
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .form-group select:disabled,
+        .form-group input:disabled,
+        .form-group textarea:disabled {
+            background-color: #f8f9fa;
+            color: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .empty-form-message {
+            text-align: center;
+            color: #6c757d;
+            font-style: italic;
+            padding: 40px 0;
+        }
+
+        /* 테스트 버튼 */
+        .test-buttons {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .test-button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .test-button.primary {
+            background: #007bff;
+            color: white;
+        }
+        
+        .test-button.primary:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+        
+        .test-button.success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .test-button.success:hover {
+            background: #1e7e34;
+        }
+
+        .test-button.warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .test-button.warning:hover {
+            background: #e0a800;
+        }
+        
+        /* 상태 표시 영역 */
+        .status-section {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .status-item {
+            margin-bottom: 10px;
+        }
+        
+        .status-label {
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .status-value {
+            color: #6c757d;
+            margin-left: 10px;
+        }
+
+        /* 테스트 결과 영역 */
+        .result-section {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        #testResults {
+            background: #ffffff;
+            padding: 15px;
+            border-radius: 6px;
+            min-height: 120px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            border: 1px solid #dee2e6;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        /* 기능 설명 */
+        .feature-info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .feature-info h4 {
+            margin: 0 0 10px 0;
+            color: #1976d2;
+        }
+
+        .feature-info ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">🚀 TabFormSync 고급 기능 테스트</h1>
+        
+        <div class="feature-info">
+            <h4>✨ 고급 기능들</h4>
+            <ul>
+                <li><strong>API 기반 메뉴 로딩:</strong> REST API에서 동적 메뉴 데이터 로드</li>
+                <li><strong>로컬 데이터 지원:</strong> API 없이도 로컬 데이터로 동작</li>
+                <li><strong>설정 분리:</strong> 메뉴 데이터와 폼 설정을 별도 관리</li>
+                <li><strong>폴백 시스템:</strong> API 실패시 자동 폴백 데이터 사용</li>
+                <li><strong>상품비교 로직:</strong> 대상 선택 시 비교 항목 활성화</li>
+                <li><strong>동적 폼 생성:</strong> 메뉴별 다른 폼 요소 자동 생성</li>
+            </ul>
+        </div>
+        
+        <!-- 탭 메뉴 컨테이너 -->
+        <h3>🔗 동적 탭 메뉴</h3>
+        <ul id="tabContainer">
+            <!-- TabFormSync가 동적으로 생성 -->
+        </ul>
+        
+        <!-- 폼 컨테이너 -->
+        <div id="formContainer">
+            <!-- TabFormSync가 동적으로 생성 -->
+        </div>
+        
+        <!-- 테스트 버튼 -->
+        <div class="test-buttons">
+            <button class="test-button primary" onclick="initWithLocalData()">로컬 데이터 초기화</button>
+            <button class="test-button primary" onclick="initWithAPI()">API 모드 초기화</button>
+            <button class="test-button success" onclick="getCurrentData()">현재 값 추출</button>
+            <button class="test-button success" onclick="getAllFormData()">전체 데이터</button>
+            <button class="test-button warning" onclick="resetCurrentForm()">폼 리셋</button>
+            <button class="test-button warning" onclick="testProductCompare()">상품비교 테스트</button>
+        </div>
+        
+        <!-- 상태 표시 -->
+        <div class="status-section">
+            <h3>📋 현재 상태</h3>
+            <div class="status-item">
+                <span class="status-label">현재 메뉴:</span>
+                <span id="currentMenu" class="status-value">선택된 메뉴가 없습니다</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">현재 값:</span>
+                <span id="currentValues" class="status-value">입력된 값이 없습니다</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">초기화 모드:</span>
+                <span id="initMode" class="status-value">미초기화</span>
+            </div>
+        </div>
+
+        <!-- 테스트 결과 표시 영역 -->
+        <div class="result-section">
+            <h3>📊 테스트 결과</h3>
+            <div id="testResults">테스트 버튼을 클릭하면 결과가 여기에 표시됩니다...</div>
+        </div>
+    </div>
+
+    <!-- TabFormSync 스크립트 -->
+    <script src="TabFormSync.js"></script>
+    
+    <script>
+        let tabFormSync;
+        
+        // 로컬 테스트 데이터 (실제 API 응답 형태 - 신규 구조)
+        const localMenuData = [
+            {
+                "id": "2001",
+                "name": "상품정보",
+                "description": "상품 정보를 요약해서 보여줍니다",
+                "first_ref_text": 1
+            },
+            {
+                "id": "2002",
+                "name": "상품비교",
+                "description": "두 개의 상품을 비교 분석합니다",
+                "first_ref_text": 2
+            },
+            {
+                "id": "2003",
+                "name": "태그정보",
+                "description": "상품의 태그 정보를 조회합니다",
+                "first_ref_text": -3  // 음수는 제외됨
+            },
+            {
+                "id": "2004",
+                "name": "지식질문",
+                "description": "사용자 질의를 통한 상품 상세 정보",
+                "first_ref_text": 4
+            },
+            {
+                "id": "2005",
+                "name": "상품목차",
+                "description": "상품 상세 정보를 요약 형태로 제공",
+                "first_ref_text": 5
+            },
+            {
+                "id": "2006",
+                "name": "제휴카드",
+                "description": "KT 제휴 카드 정보를 요약합니다",
+                "first_ref_text": 6
+            },
+            {
+                "id": "2007",
+                "name": "복지할인",
+                "description": "복지 혜택 정보를 요약합니다",
+                "first_ref_text": 7
+            },
+            {
+                "id": "2008",
+                "name": "결합상품",
+                "description": "조합 상품의 정보를 요약합니다",
+                "first_ref_text": 8
+            }
+        ];
+        
+        // 폼 설정 (신규 ID 구조에 맞춰 수정)
+        const localMenuConfigs = {
+            '2001': {
+                elements: {
+                    'productSelect': { 
+                        type: 'select', 
+                        defaultValue: '00', 
+                        label: '상품 선택',
+                        disabled: false
+                    }
+                }
+            },
+            '2002': {
+                elements: {
+                    'sourceProduct': { 
+                        type: 'select', 
+                        defaultValue: '00', 
+                        label: '대상상품',
+                        disabled: false
+                    },
+                    'targetProduct': { 
+                        type: 'select', 
+                        defaultValue: '00', 
+                        disabled: true, 
+                        label: '비교상품' 
+                    }
+                }
+            },
+            '2003': {
+                elements: {
+                    'tagInput': { 
+                        type: 'input', 
+                        defaultValue: '', 
+                        label: '태그 검색',
+                        placeholder: '태그명을 입력하세요...'
+                    }
+                }
+            },
+            '2004': {
+                elements: {
+                    'queryInput': { 
+                        type: 'textarea', 
+                        defaultValue: '', 
+                        label: '질문 입력',
+                        placeholder: 'KT 상품에 대해 궁금한 점을 입력하세요...'
+                    }
+                }
+            },
+            '2005': {
+                elements: {
+                    'categorySelect': { 
+                        type: 'select', 
+                        defaultValue: '00', 
+                        label: '카테고리 선택'
+                    }
+                }
+            },
+            '2006': {
+                elements: {
+                    'cardSelect': { 
+                        type: 'select', 
+                        defaultValue: '00', 
+                        label: '제휴카드 선택'
+                    }
+                }
+            },
+            '2007': {
+                elements: {
+                    'welfareSelect': { 
+                        type: 'select', 
+                        defaultValue: '00', 
+                        label: '복지할인 선택'
+                    }
+                }
+            },
+            '2008': {
+                elements: {
+                    'bundleSelect': { 
+                        type: 'select', 
+                        defaultValue: '00', 
+                        label: '결합상품 선택'
+                    }
+                }
+            }
+        };
+        
+        // 결과 표시 함수
+        function showResult(title, content, isError = false) {
+            const $results = $('#testResults');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            let formattedContent;
+            if (typeof content === 'object') {
+                formattedContent = JSON.stringify(content, null, 2);
+            } else {
+                formattedContent = content;
+            }
+            
+            const resultText = `[${timestamp}] ${title}\n${formattedContent}\n\n${'─'.repeat(50)}\n`;
+            
+            $results.css({
+                'background-color': isError ? '#f8d7da' : '#d4edda',
+                'border-color': isError ? '#f5c6cb' : '#c3e6cb'
+            });
+            
+            $results.text(resultText);
+            
+            // 스크롤
+            $results[0].scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // 로컬 데이터로 초기화
+        function initWithLocalData() {
+            try {
+                showResult('🔄 로컬 데이터 초기화', '로컬 데이터를 사용하여 TabFormSync를 초기화합니다...');
+                
+                tabFormSync = new TabFormSync({
+                    apiUrl: 'http://localhost:8080/api/menu/list',
+                    tabContainer: '#tabContainer',
+                    formContainer: '#formContainer',
+                    statusElements: {
+                        currentMenu: '#currentMenu',
+                        currentValues: '#currentValues'
+                    },
+                    localMenuData: localMenuData,        // 개발/테스트용 (서버 실패 시에만 사용)
+                    localMenuConfigs: localMenuConfigs,  // 메뉴 설정 (로컬 우선)
+                    onTabChange: function(menuId, menuName) {
+                        console.log('탭 변경:', menuId, menuName);
+                        showResult('🔄 탭 변경', `${menuName} (${menuId}) 탭으로 전환되었습니다.`);
+                    },
+                    onFormChange: function(data) {
+                        console.log('폼 변경:', data);
+                    }
+                });
+                
+                tabFormSync.init();
+                $('#initMode').text('개발 모드 (서버 없음 → 로컬 폴백)');
+                
+                showResult('✅ 초기화 완료', {
+                    모드: '개발 모드 (서버 데이터 로드 실패 → 로컬 폴백)',
+                    메뉴데이터: '로컬 폴백 데이터 사용',
+                    메뉴설정: '로컬 설정 사용',
+                    메뉴수: localMenuData.length,
+                    설정수: Object.keys(localMenuConfigs).length,
+                    필터링된메뉴: localMenuData.filter(m => (m.first_ref_text || 0) >= 0).length,
+                    데이터구조: '신규 구조 (id, name, description, first_ref_text)'
+                });
+                
+            } catch (error) {
+                console.error('초기화 오류:', error);
+                showResult('❌ 초기화 실패', `오류: ${error.message}`, true);
+            }
+        }
+        
+        // API 모드로 초기화
+        function initWithAPI() {
+            try {
+                showResult('🌐 API 모드 초기화', 'API를 통해 메뉴 데이터를 로드하고 로컬 설정을 사용합니다...');
+                
+                tabFormSync = new TabFormSync({
+                    apiUrl: 'http://localhost:8080/api/menu/list',      // 메뉴 데이터는 서버에서
+                    configUrl: 'http://localhost:8080/api/menu/configs', // 설정 API (로컬 설정이 없을 때만)
+                    tabContainer: '#tabContainer',
+                    formContainer: '#formContainer',
+                    statusElements: {
+                        currentMenu: '#currentMenu',
+                        currentValues: '#currentValues'
+                    },
+                    localMenuConfigs: localMenuConfigs,  // 로컬 설정 우선 사용
+                    onTabChange: function(menuId, menuName) {
+                        console.log('API 탭 변경:', menuId, menuName);
+                        showResult('🔄 API 탭 변경', `서버 메뉴 데이터 + 로컬 설정으로 ${menuName} 탭 전환`);
+                    }
+                });
+                
+                tabFormSync.init();
+                $('#initMode').text('API 모드 (폴백 가능)');
+                
+                // API 결과 확인
+                setTimeout(() => {
+                    if (tabFormSync.menuList && tabFormSync.menuList.length > 0) {
+                        showResult('✅ API 연결 성공', {
+                            API상태: '연결 성공',
+                            메뉴수: tabFormSync.menuList.length,
+                            메뉴목록: tabFormSync.menuList.map(m => tabFormSync.getMenuName(m)),
+                            데이터구조: tabFormSync.detectDataStructure(tabFormSync.menuList[0])
+                        });
+                    } else {
+                        showResult('⚠️ API 폴백', 'API 연결 실패로 폴백 데이터를 사용합니다.');
+                    }
+                }, 2000);
+                
+            } catch (error) {
+                console.error('API 초기화 오류:', error);
+                showResult('❌ API 초기화 실패', `오류: ${error.message}`, true);
+            }
+        }
+        
+        // 현재 데이터 추출
+        function getCurrentData() {
+            if (!tabFormSync) {
+                showResult('❌ 오류', 'TabFormSync가 초기화되지 않았습니다.', true);
+                return;
+            }
+            
+            try {
+                const currentData = tabFormSync.getCurrentData();
+                
+                if (currentData) {
+                    showResult('✅ 현재 데이터 추출 성공', {
+                        메뉴ID: currentData.menuId,
+                        메뉴명: currentData.menuName,
+                        입력데이터: currentData.formData,
+                        입력필드수: Object.keys(currentData.formData).length
+                    });
+                } else {
+                    showResult('⚠️ 데이터 없음', '현재 선택된 메뉴나 입력된 데이터가 없습니다.');
+                }
+                
+            } catch (error) {
+                console.error('데이터 추출 오류:', error);
+                showResult('❌ 데이터 추출 실패', `오류: ${error.message}`, true);
+            }
+        }
+        
+        // 전체 폼 데이터 (모든 탭)
+        function getAllFormData() {
+            if (!tabFormSync) {
+                showResult('❌ 오류', 'TabFormSync가 초기화되지 않았습니다.', true);
+                return;
+            }
+            
+            try {
+                const allData = {};
+                const originalMenuId = tabFormSync.currentMenuId;
+                
+                tabFormSync.menuList.forEach(menu => {
+                    const menuId = tabFormSync.getMenuId(menu);
+                    tabFormSync.currentMenuId = menuId;
+                    const data = tabFormSync.getCurrentData();
+                    if (data) {
+                        allData[menuId] = {
+                            menuName: data.menuName,
+                            formData: data.formData,
+                            fieldCount: Object.keys(data.formData).length
+                        };
+                    }
+                });
+                
+                // 원래 메뉴로 복원
+                tabFormSync.currentMenuId = originalMenuId;
+                
+                showResult('✅ 전체 데이터 추출 성공', {
+                    총메뉴수: Object.keys(allData).length,
+                    현재활성메뉴: originalMenuId,
+                    메뉴별데이터: allData
+                });
+                
+            } catch (error) {
+                console.error('전체 데이터 추출 오류:', error);
+                showResult('❌ 전체 데이터 추출 실패', `오류: ${error.message}`, true);
+            }
+        }
+        
+        // 현재 폼 리셋
+        function resetCurrentForm() {
+            if (!tabFormSync) {
+                showResult('❌ 오류', 'TabFormSync가 초기화되지 않았습니다.', true);
+                return;
+            }
+            
+            try {
+                tabFormSync.reset();
+                showResult('✅ 폼 리셋 완료', '현재 폼의 모든 입력값이 초기화되었습니다.');
+                
+            } catch (error) {
+                console.error('폼 리셋 오류:', error);
+                showResult('❌ 폼 리셋 실패', `오류: ${error.message}`, true);
+            }
+        }
+        
+        // 상품비교 기능 테스트
+        function testProductCompare() {
+            if (!tabFormSync) {
+                showResult('❌ 오류', 'TabFormSync가 초기화되지 않았습니다.', true);
+                return;
+            }
+            
+            try {
+                // 상품비교 탭으로 이동
+                const compareTab = tabFormSync.$tabContainer.find('a').filter(function() {
+                    return $(this).text().includes('비교');
+                });
+                
+                if (compareTab.length > 0) {
+                    compareTab.click();
+                    
+                    setTimeout(() => {
+                        // 대상상품 자동 선택
+                        $('#sourceProduct').val('PROD001').trigger('change');
+                        
+                        setTimeout(() => {
+                            const targetDisabled = $('#targetProduct').prop('disabled');
+                            showResult('✅ 상품비교 테스트', {
+                                상품비교탭: '이동 완료',
+                                대상상품: 'PROD001 선택됨',
+                                비교상품활성화: !targetDisabled,
+                                테스트결과: targetDisabled ? '실패 - 비교상품이 활성화되지 않음' : '성공 - 비교상품 활성화됨'
+                            });
+                        }, 500);
+                    }, 500);
+                } else {
+                    showResult('⚠️ 상품비교 탭 없음', '상품비교 탭을 찾을 수 없습니다.');
+                }
+                
+            } catch (error) {
+                console.error('상품비교 테스트 오류:', error);
+                showResult('❌ 상품비교 테스트 실패', `오류: ${error.message}`, true);
+            }
+        }
+        
+        // 페이지 로드 후 자동 초기화
+        $(document).ready(function() {
+            console.log('TabFormSync 고급 기능 테스트 페이지 로드 완료');
+            showResult('🚀 페이지 로드 완료', '테스트 버튼을 클릭하여 TabFormSync 기능을 테스트하세요.');
+            
+            // 자동으로 로컬 데이터 모드로 초기화
+            setTimeout(() => {
+                initWithLocalData();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
