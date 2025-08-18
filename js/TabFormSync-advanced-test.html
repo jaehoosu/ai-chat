@@ -38,8 +38,10 @@
             display: flex;
             border-bottom: 2px solid #e9ecef;
             background: #f8f9fa;
-            border-radius: 8px 8px 0 0;
+            border-radius: 0 0 0 0;
             overflow: hidden;
+            border: 1px solid #dee2e6;
+            border-top: none;
         }
 
         #tabContainer li {
@@ -53,6 +55,7 @@
             color: #6c757d;
             background: #f8f9fa;
             border: none;
+            border-bottom: 3px solid transparent;
             transition: all 0.3s ease;
             cursor: pointer;
             font-weight: 500;
@@ -62,12 +65,14 @@
         #tabContainer a:hover {
             background: #e9ecef;
             color: #495057;
+            border-bottom-color: #dee2e6;
         }
 
         #tabContainer a.current {
-            background: #007bff;
-            color: white;
+            background: white;
+            color: #007bff;
             font-weight: 600;
+            border-bottom-color: #007bff;
         }
 
         /* 폼 컨테이너 스타일 */
@@ -255,6 +260,106 @@
             margin: 0;
             padding-left: 20px;
         }
+
+        /* 공통 옵션 스타일 */
+        .options-section {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px 20px;
+            margin: 15px 0;
+            border-top: none;
+        }
+
+        .options-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .options-left {
+            display: flex;
+            gap: 25px;
+            align-items: center;
+            flex: 1;
+        }
+
+        .options-right {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .option-group {
+            display: flex;
+            align-items: center;
+            margin: 0;
+        }
+
+        .option-label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            font-weight: 500;
+            color: #495057;
+            font-size: 14px;
+            margin: 0;
+            white-space: nowrap;
+        }
+
+        .option-label input[type="checkbox"] {
+            margin-right: 8px;
+            transform: scale(1.1);
+            cursor: pointer;
+        }
+
+        .option-desc {
+            display: none; /* 한 줄 레이아웃에서는 설명 숨김 */
+        }
+
+        .options-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #495057;
+            margin-right: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        .option-button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 13px;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .option-button.primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .option-button.primary:hover {
+            background: #0056b3;
+        }
+
+        .option-button.success {
+            background: #28a745;
+            color: white;
+        }
+
+        .option-button.success:hover {
+            background: #1e7e34;
+        }
+
+        .checkmark {
+            margin-left: 5px;
+        }
     </style>
 </head>
 <body>
@@ -270,6 +375,8 @@
                 <li><strong>폴백 시스템:</strong> API 실패시 자동 폴백 데이터 사용</li>
                 <li><strong>상품비교 로직:</strong> 대상 선택 시 비교 항목 활성화</li>
                 <li><strong>동적 폼 생성:</strong> 메뉴별 다른 폼 요소 자동 생성</li>
+                <li><strong>🆕 공통 옵션 관리:</strong> streaming, cache, tags 등 API 공통 옵션</li>
+                <li><strong>🆕 Payload 생성:</strong> aimgmt.jsp 스타일의 REST API 페이로드 자동 생성</li>
             </ul>
         </div>
         
@@ -279,6 +386,43 @@
             <!-- TabFormSync가 동적으로 생성 -->
         </ul>
         
+        <!-- 공통 API 옵션 (좌우 분할 레이아웃) -->
+        <div class="options-section">
+            <div class="options-container">
+                <!-- 왼쪽: API 옵션들 -->
+                <div class="options-left">
+                    <span class="options-title">⚙️ API 옵션:</span>
+                    
+                    <div class="option-group">
+                        <label class="option-label">
+                            <input type="checkbox" id="opt-stream" checked>
+                            스트리밍
+                        </label>
+                    </div>
+                    
+                    <div class="option-group">
+                        <label class="option-label">
+                            <input type="checkbox" id="opt-cache" checked>
+                            캐시 사용
+                        </label>
+                    </div>
+                    
+                    <div class="option-group">
+                        <label class="option-label">
+                            <input type="checkbox" id="opt-tags">
+                            태그 정보
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- 오른쪽: 주요 액션 버튼들 -->
+                <div class="options-right">
+                    <button class="option-button primary" onclick="generatePayload()">🚀 Payload 생성</button>
+                    <button class="option-button success" onclick="testApiCall()">📡 API 호출</button>
+                </div>
+            </div>
+        </div>
+
         <!-- 폼 컨테이너 -->
         <div id="formContainer">
             <!-- TabFormSync가 동적으로 생성 -->
@@ -707,6 +851,218 @@
                 initWithLocalData();
             }, 1000);
         });
+
+        // =================================================================
+        // PayloadGenerator - REST API 호출용 페이로드 생성
+        // =================================================================
+        
+        /**
+         * 공통 옵션 값 가져오기
+         */
+        function getCommonOptions() {
+            return {
+                stream: $('#opt-stream').is(':checked'),
+                cache: $('#opt-cache').is(':checked'),  
+                tags: $('#opt-tags').is(':checked')
+            };
+        }
+        
+        /**
+         * 요청 ID 생성 (랜덤 키)
+         */
+        function generateRequestId() {
+            const array = new Uint8Array(32);
+            window.crypto.getRandomValues(array);
+            const randomHashKey = btoa(String.fromCharCode.apply(null, array));
+            return randomHashKey.replace(/\//g, '_')
+                              .replace(/\+/g, '_')
+                              .replace(/=+$/, '');
+        }
+        
+        /**
+         * 메뉴별 query body 생성
+         */
+        function createQueryBody(menuId, formData) {
+            const queryBodies = {
+                '2001': () => {
+                    // 상품정보
+                    const productId = formData.productSelect?.value || '00';
+                    return {
+                        type: 'product_info',
+                        product_id: productId,
+                        detail_level: 'summary'
+                    };
+                },
+                
+                '2002': () => {
+                    // 상품비교
+                    const sourceId = formData.sourceProduct?.value || '00';
+                    const targetId = formData.targetProduct?.value || '00';
+                    return {
+                        type: 'product_compare',
+                        source_product: sourceId,
+                        target_product: targetId,
+                        compare_fields: ['price', 'features', 'benefits']
+                    };
+                },
+                
+                '2004': () => {
+                    // 지식질문
+                    const query = formData.queryInput?.value || '';
+                    return {
+                        type: 'knowledge_query',
+                        question: query,
+                        context: 'kt_products'
+                    };
+                },
+                
+                '2005': () => {
+                    // 상품목차
+                    const category = formData.categorySelect?.value || '00';
+                    return {
+                        type: 'product_index',
+                        category: category,
+                        format: 'summary'
+                    };
+                },
+                
+                '2006': () => {
+                    // 제휴카드
+                    const cardId = formData.cardSelect?.value || '00';
+                    return {
+                        type: 'partnership_card',
+                        card_id: cardId,
+                        info_type: 'benefits'
+                    };
+                },
+                
+                '2007': () => {
+                    // 복지할인
+                    const welfareId = formData.welfareSelect?.value || '00';
+                    return {
+                        type: 'welfare_discount',
+                        welfare_id: welfareId,
+                        discount_type: 'all'
+                    };
+                },
+                
+                '2008': () => {
+                    // 결합상품
+                    const bundleId = formData.bundleSelect?.value || '00';
+                    return {
+                        type: 'bundle_product',
+                        bundle_id: bundleId,
+                        combination_type: 'optimized'
+                    };
+                }
+            };
+            
+            const generator = queryBodies[menuId];
+            return generator ? generator() : null;
+        }
+        
+        /**
+         * 완전한 페이로드 생성 (aimgmt.jsp의 generate_payload() 스타일)
+         */
+        function generatePayload() {
+            if (!tabFormSync || !tabFormSync.currentMenuId) {
+                showResult('❌ 페이로드 생성 실패', 'TabFormSync가 초기화되지 않았거나 선택된 메뉴가 없습니다.', true);
+                return null;
+            }
+            
+            try {
+                const currentData = tabFormSync.getCurrentData();
+                const menuId = currentData.menuId;
+                const formData = currentData.formData;
+                const options = getCommonOptions();
+                const requestId = generateRequestId();
+                
+                // query body 생성
+                const queryBody = createQueryBody(menuId, formData);
+                
+                if (!queryBody) {
+                    showResult('❌ Query Body 생성 실패', `메뉴 ID ${menuId}에 대한 query body를 생성할 수 없습니다.`, true);
+                    return null;
+                }
+                
+                // 완전한 페이로드 구조 (aimgmt.jsp 스타일)
+                const payload = {
+                    common: {
+                        iid: menuId,                    // 메뉴 ID
+                        user: 'test_user',              // 사용자 ID
+                        req: requestId,                 // 요청 ID
+                        type: 'ai_chat'                 // API 타입
+                    },
+                    option: {
+                        cache: options.cache,           // 캐시 사용 여부
+                        stream: options.stream,         // 스트리밍 여부  
+                        tags: options.tags              // 태그 정보 포함 여부
+                    },
+                    query: queryBody                    // 메뉴별 쿼리 내용
+                };
+                
+                showResult('✅ Payload 생성 성공', {
+                    생성시간: new Date().toLocaleString(),
+                    메뉴정보: {
+                        ID: menuId,
+                        이름: currentData.menuName,
+                        입력필드수: Object.keys(formData).length
+                    },
+                    공통옵션: options,
+                    요청ID: requestId,
+                    페이로드크기: JSON.stringify(payload).length + ' bytes',
+                    완성된페이로드: payload
+                });
+                
+                return payload;
+                
+            } catch (error) {
+                console.error('페이로드 생성 오류:', error);
+                showResult('❌ 페이로드 생성 실패', `오류: ${error.message}`, true);
+                return null;
+            }
+        }
+        
+        /**
+         * API 호출 테스트 (실제로는 호출하지 않고 시뮬레이션)
+         */
+        function testApiCall() {
+            const payload = generatePayload();
+            
+            if (!payload) {
+                return;
+            }
+            
+            // API 호출 시뮬레이션
+            showResult('📡 API 호출 시뮬레이션', '실제 API 호출 대신 시뮬레이션을 수행합니다...');
+            
+            setTimeout(() => {
+                const mockResponse = {
+                    success: true,
+                    request_id: payload.common.req,
+                    menu_id: payload.common.iid,
+                    processing_time: '0.85s',
+                    cache_used: payload.option.cache,
+                    stream_mode: payload.option.stream,
+                    response_data: {
+                        content: `${payload.common.iid} 메뉴에 대한 AI 응답 내용입니다.`,
+                        confidence: 0.92,
+                        sources: ['KB001', 'KB002', 'KB003']
+                    }
+                };
+                
+                showResult('✅ API 응답 시뮬레이션', {
+                    요청정보: {
+                        메뉴ID: payload.common.iid,
+                        요청ID: payload.common.req,
+                        사용자: payload.common.user
+                    },
+                    응답정보: mockResponse,
+                    처리상태: '성공',
+                    시뮬레이션: true
+                });
+            }, 1500);
+        }
     </script>
 </body>
 </html>
