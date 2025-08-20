@@ -88,11 +88,18 @@
                 background: white;
                 border-radius: 8px;
                 box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-                max-width: 600px;
-                width: 90%;
-                max-height: 80vh;
+                width: 600px;
+                height: 500px;
+                min-width: 400px;
+                min-height: 300px;
+                max-width: 90vw;
+                max-height: 90vh;
                 overflow: hidden;
                 animation: popupFadeIn 0.3s ease;
+                position: relative;
+                resize: both;
+                display: flex;
+                flex-direction: column;
             }
             
             @keyframes popupFadeIn {
@@ -107,6 +114,9 @@
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
+                flex-shrink: 0;
+                cursor: move;
+                user-select: none;
             }
             
             .popup-title {
@@ -138,12 +148,17 @@
             
             .popup-body {
                 padding: 20px;
-                max-height: 60vh;
+                flex: 1;
                 overflow-y: auto;
+                display: flex;
+                flex-direction: column;
             }
             
             .popup-form-group {
                 margin-bottom: 15px;
+                flex: 1;
+                display: flex;
+                flex-direction: column;
             }
             
             .popup-label {
@@ -156,13 +171,14 @@
             
             .popup-textarea {
                 width: 100%;
-                min-height: 200px;
+                flex: 1;
+                min-height: 150px;
                 padding: 12px;
                 border: 1px solid #ddd;
                 border-radius: 4px;
                 font-size: 14px;
                 font-family: 'Courier New', monospace;
-                resize: vertical;
+                resize: none;
                 box-sizing: border-box;
             }
             
@@ -179,6 +195,27 @@
                 display: flex;
                 gap: 10px;
                 justify-content: flex-end;
+                flex-shrink: 0;
+            }
+            
+            /* 리사이즈 핸들 스타일링 */
+            .popup-container::-webkit-resizer {
+                background: #dee2e6;
+                border-radius: 0 0 8px 0;
+            }
+            
+            /* 드래그 인디케이터 */
+            .popup-header::before {
+                content: '';
+                position: absolute;
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%);
+                width: 20px;
+                height: 4px;
+                background: #dee2e6;
+                border-radius: 2px;
+                pointer-events: none;
             }
             
             .popup-btn {
@@ -305,6 +342,11 @@
          */
         bindEvents(popup, options) {
             const $popup = popup.element;
+            const $container = $popup.find('.popup-container');
+            const $header = $popup.find('.popup-header');
+            
+            // 드래그 이동 기능
+            this.makeDraggable($container, $header);
             
             // 저장 버튼
             $popup.find('.popup-save').on('click', () => {
@@ -353,6 +395,67 @@
         }
 
         /**
+         * 드래그 가능하게 만들기
+         */
+        makeDraggable($container, $handle) {
+            let isDragging = false;
+            let startX, startY, initialLeft, initialTop;
+            
+            $handle.on('mousedown', (e) => {
+                // 닫기 버튼 클릭은 제외
+                if ($(e.target).hasClass('popup-close-btn')) {
+                    return;
+                }
+                
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                
+                const containerPos = $container.position();
+                initialLeft = containerPos.left || 0;
+                initialTop = containerPos.top || 0;
+                
+                $container.css({
+                    position: 'relative',
+                    left: initialLeft,
+                    top: initialTop
+                });
+                
+                $handle.css('cursor', 'grabbing');
+                e.preventDefault();
+            });
+            
+            $(document).on('mousemove', (e) => {
+                if (!isDragging) return;
+                
+                const deltaX = e.clientX - startX;
+                const deltaY = e.clientY - startY;
+                
+                const newLeft = initialLeft + deltaX;
+                const newTop = initialTop + deltaY;
+                
+                // 화면 경계 체크
+                const maxLeft = window.innerWidth - $container.outerWidth();
+                const maxTop = window.innerHeight - $container.outerHeight();
+                
+                const constrainedLeft = Math.max(-200, Math.min(maxLeft + 200, newLeft));
+                const constrainedTop = Math.max(-50, Math.min(maxTop + 50, newTop));
+                
+                $container.css({
+                    left: constrainedLeft,
+                    top: constrainedTop
+                });
+            });
+            
+            $(document).on('mouseup', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    $handle.css('cursor', 'move');
+                }
+            });
+        }
+
+        /**
          * 팝업 숨기기
          * @param {string} popupId - 팝업 ID
          */
@@ -361,6 +464,7 @@
             if (popup) {
                 // 이벤트 리스너 정리
                 $(document).off(`keydown.popup-${popupId}`);
+                $(document).off('mousemove mouseup'); // 드래그 이벤트 정리
                 
                 // 애니메이션과 함께 제거
                 popup.element.fadeOut(200, () => {
