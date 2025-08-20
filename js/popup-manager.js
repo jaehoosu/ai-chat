@@ -117,6 +117,15 @@
                 flex-shrink: 0;
                 cursor: move;
                 user-select: none;
+                position: relative;
+            }
+            
+            .popup-header:hover {
+                background: #e9ecef;
+            }
+            
+            .popup-title {
+                pointer-events: none;
             }
             
             .popup-title {
@@ -202,20 +211,6 @@
             .popup-container::-webkit-resizer {
                 background: #dee2e6;
                 border-radius: 0 0 8px 0;
-            }
-            
-            /* 드래그 인디케이터 */
-            .popup-header::before {
-                content: '';
-                position: absolute;
-                left: 50%;
-                top: 50%;
-                transform: translate(-50%, -50%);
-                width: 20px;
-                height: 4px;
-                background: #dee2e6;
-                border-radius: 2px;
-                pointer-events: none;
             }
             
             .popup-btn {
@@ -346,7 +341,7 @@
             const $header = $popup.find('.popup-header');
             
             // 드래그 이동 기능
-            this.makeDraggable($container, $header);
+            this.makeDraggable($container, $header, popup);
             
             // 저장 버튼
             $popup.find('.popup-save').on('click', () => {
@@ -373,15 +368,88 @@
                 popup.close();
             });
             
-            // 오버레이 클릭 시 닫기
+            // 오버레이 클릭 시 닫기 (드래그/리사이즈 후에는 닫지 않음)
+            let wasResized = false;
+            let wasDragged = false;
+            let lastResizeTime = 0;
+            
+            // 리사이즈 감지 - 더 확실한 방법
+            let initialWidth = $container.width();
+            let initialHeight = $container.height();
+            
+            // MutationObserver로 스타일 변경 감지
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+                        const currentWidth = $container.width();
+                        const currentHeight = $container.height();
+                        
+                        if (currentWidth !== initialWidth || currentHeight !== initialHeight) {
+                            wasResized = true;
+                            lastResizeTime = Date.now();
+                            setTimeout(() => { 
+                                if (Date.now() - lastResizeTime >= 200) {
+                                    wasResized = false; 
+                                }
+                            }, 200);
+                            
+                            initialWidth = currentWidth;
+                            initialHeight = currentHeight;
+                        }
+                    }
+                });
+            });
+            
+            observer.observe($container[0], {
+                attributes: true,
+                attributeFilter: ['style']
+            });
+            
+            // 마우스 이벤트로도 리사이즈 감지
+            $container.on('mousedown', (e) => {
+                // 리사이즈 핸들 영역 감지 (우하단 모서리)
+                const rect = $container[0].getBoundingClientRect();
+                const isResizeHandle = (
+                    e.clientX > rect.right - 20 && 
+                    e.clientY > rect.bottom - 20
+                );
+                
+                if (isResizeHandle) {
+                    wasResized = true;
+                    lastResizeTime = Date.now();
+                    
+                    const checkResize = () => {
+                        if (Date.now() - lastResizeTime >= 300) {
+                            wasResized = false;
+                        } else {
+                            setTimeout(checkResize, 100);
+                        }
+                    };
+                    setTimeout(checkResize, 100);
+                }
+            });
+            
             $popup.on('click', (e) => {
-                if (e.target === $popup[0]) {
+                if (e.target === $popup[0] && !wasResized && !wasDragged) {
                     if (options.onClose) {
                         options.onClose(popup);
                     }
                     popup.close();
                 }
             });
+            
+            // 드래그 상태를 팝업 인스턴스에 저장
+            popup.setDragState = (dragged) => {
+                wasDragged = dragged;
+                setTimeout(() => { wasDragged = false; }, 200);
+            };
+            
+            // 팝업 닫힐 때 observer 정리
+            popup.cleanupObserver = () => {
+                if (observer) {
+                    observer.disconnect();
+                }
+            };
             
             // ESC 키로 닫기
             $(document).on(`keydown.popup-${popup.id}`, (e) => {
@@ -397,9 +465,11 @@
         /**
          * 드래그 가능하게 만들기
          */
-        makeDraggable($container, $handle) {
+        makeDraggable($container, $handle, popup) {
             let isDragging = false;
-            let startX, startY, initialLeft, initialTop;
+            let dragStarted = false;
+            let startX, startY, currentLeft, currentTop;
+            const dragThreshold = 5; // 드래그 시작 임계값 (픽셀)
             
             $handle.on('mousedown', (e) => {
                 // 닫기 버튼 클릭은 제외
@@ -408,49 +478,81 @@
                 }
                 
                 isDragging = true;
+                dragStarted = false;
                 startX = e.clientX;
                 startY = e.clientY;
                 
-                const containerPos = $container.position();
-                initialLeft = containerPos.left || 0;
-                initialTop = containerPos.top || 0;
+                // 현재 실제 위치 가져오기
+                const containerStyle = $container[0].style;
+                currentLeft = parseInt(containerStyle.left) || 0;
+                currentTop = parseInt(containerStyle.top) || 0;
                 
-                $container.css({
-                    position: 'relative',
-                    left: initialLeft,
-                    top: initialTop
-                });
-                
-                $handle.css('cursor', 'grabbing');
                 e.preventDefault();
+                e.stopPropagation(); // 이벤트 버블링 방지
             });
             
-            $(document).on('mousemove', (e) => {
+            $(document).on(`mousemove.popup-${popup.id}`, (e) => {
                 if (!isDragging) return;
                 
                 const deltaX = e.clientX - startX;
                 const deltaY = e.clientY - startY;
+                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
                 
-                const newLeft = initialLeft + deltaX;
-                const newTop = initialTop + deltaY;
+                // 임계값을 넘어야 실제 드래그 시작
+                if (!dragStarted && distance < dragThreshold) {
+                    return;
+                }
+                
+                if (!dragStarted) {
+                    dragStarted = true;
+                    $container.css({
+                        position: 'relative',
+                        left: currentLeft,
+                        top: currentTop
+                    });
+                    $handle.css('cursor', 'grabbing');
+                }
+                
+                const newLeft = currentLeft + deltaX;
+                const newTop = currentTop + deltaY;
                 
                 // 화면 경계 체크
-                const maxLeft = window.innerWidth - $container.outerWidth();
-                const maxTop = window.innerHeight - $container.outerHeight();
+                const overlay = $container.parent();
+                const maxLeft = overlay.width() - $container.outerWidth();
+                const maxTop = overlay.height() - $container.outerHeight();
                 
-                const constrainedLeft = Math.max(-200, Math.min(maxLeft + 200, newLeft));
+                const constrainedLeft = Math.max(-$container.outerWidth() * 0.7, Math.min(maxLeft + $container.outerWidth() * 0.7, newLeft));
                 const constrainedTop = Math.max(-50, Math.min(maxTop + 50, newTop));
                 
                 $container.css({
                     left: constrainedLeft,
                     top: constrainedTop
                 });
+                
+                e.preventDefault();
+                e.stopPropagation();
             });
             
-            $(document).on('mouseup', () => {
+            $(document).on(`mouseup.popup-${popup.id}`, (e) => {
                 if (isDragging) {
                     isDragging = false;
-                    $handle.css('cursor', 'move');
+                    
+                    if (dragStarted) {
+                        dragStarted = false;
+                        $handle.css('cursor', 'move');
+                        
+                        // 드래그 완료 상태 알림
+                        if (popup.setDragState) {
+                            popup.setDragState(true);
+                        }
+                        
+                        // 드래그가 완료된 후 현재 위치 업데이트
+                        const containerStyle = $container[0].style;
+                        currentLeft = parseInt(containerStyle.left) || 0;
+                        currentTop = parseInt(containerStyle.top) || 0;
+                    }
+                    
+                    e.stopPropagation(); // 배경 클릭 이벤트 방지
                 }
             });
         }
@@ -462,9 +564,14 @@
         hide(popupId) {
             const popup = this.activePopups.get(popupId);
             if (popup) {
-                // 이벤트 리스너 정리
+                // 모든 이벤트 리스너 정리
                 $(document).off(`keydown.popup-${popupId}`);
-                $(document).off('mousemove mouseup'); // 드래그 이벤트 정리
+                $(document).off(`mousemove.popup-${popupId} mouseup.popup-${popupId}`);
+                
+                // Observer 정리
+                if (popup.cleanupObserver) {
+                    popup.cleanupObserver();
+                }
                 
                 // 애니메이션과 함께 제거
                 popup.element.fadeOut(200, () => {
