@@ -229,30 +229,31 @@
                 transition: all 0.2s ease !important;
             }
             
-            .popup-btn-primary {
+            /* 기본 팝업 버튼 스타일 (사용자 정의 클래스가 없을 때만 적용) */
+            .popup-btn.popup-btn-primary {
                 background: #007bff !important;
                 color: white !important;
             }
             
-            .popup-btn-primary:hover {
+            .popup-btn.popup-btn-primary:hover {
                 background: #0056b3 !important;
             }
             
-            .popup-btn-danger {
+            .popup-btn.popup-btn-danger {
                 background: #dc3545 !important;
                 color: white !important;
             }
             
-            .popup-btn-danger:hover {
+            .popup-btn.popup-btn-danger:hover {
                 background: #c82333 !important;
             }
             
-            .popup-btn-secondary {
+            .popup-btn.popup-btn-secondary {
                 background: #6c757d !important;
                 color: white !important;
             }
             
-            .popup-btn-secondary:hover {
+            .popup-btn.popup-btn-secondary:hover {
                 background: #545b62 !important;
             }
         </style>
@@ -280,7 +281,7 @@
          * 팝업 표시
          * @param {string} type - 팝업 타입 ('cache' 또는 'prompt')
          * @param {string} data - 초기 데이터
-         * @param {object} options - 옵션 {title, onSave, onDelete, onClose}
+         * @param {object} options - 옵션 {title, onSave, onDelete, onClose, buttonClass}
          * @returns {object} 팝업 인스턴스
          */
         show(type, data = '', options = {}) {
@@ -294,8 +295,8 @@
             const popupId = `popup-${++this.popupIdCounter}`;
             const title = options.title || template.title;
             
-            // HTML 생성
-            const popupHtml = this.createPopupHtml(popupId, template, title, data);
+            // HTML 생성 (버튼 클래스 옵션 적용)
+            const popupHtml = this.createPopupHtml(popupId, template, title, data, options.buttonClass);
             
             // DOM에 추가
             const $popup = $(popupHtml);
@@ -353,8 +354,19 @@
         /**
          * 팝업 HTML 생성
          */
-        createPopupHtml(popupId, template, title, data) {
-            const content = template.html.replace('{{title}}', title);
+        createPopupHtml(popupId, template, title, data, buttonClass = null) {
+            let content = template.html.replace('{{title}}', title);
+            
+            // 버튼 클래스 교체 (기존 코드 스타일 사용)
+            if (buttonClass) {
+                // 기본 popup-btn 클래스를 기존 버튼 클래스로 교체
+                content = content.replace(/popup-btn popup-btn-primary/g, `${buttonClass}`);
+                content = content.replace(/popup-btn popup-btn-danger/g, `${buttonClass}`);
+                content = content.replace(/popup-btn popup-btn-secondary/g, `${buttonClass}`);
+                
+                // 개별 popup-btn도 교체 (혹시 놓친 것들)
+                content = content.replace(/popup-btn/g, buttonClass);
+            }
             
             return `
                 <div id="${popupId}" class="popup-overlay">
@@ -376,16 +388,16 @@
             // 드래그 이동 기능
             this.makeDraggable($container, $header, popup);
             
-            // 저장 버튼
-            $popup.find('.popup-save').on('click', () => {
+            // 저장 버튼 (다양한 클래스 지원)
+            $popup.find('.popup-save, [class*="popup-save"]').on('click', () => {
                 const data = popup.getData();
                 if (options.onSave) {
                     options.onSave(data, popup);
                 }
             });
             
-            // 삭제 버튼 (cache만)
-            $popup.find('.popup-delete').on('click', () => {
+            // 삭제 버튼 (cache만, 다양한 클래스 지원)
+            $popup.find('.popup-delete, [class*="popup-delete"]').on('click', () => {
                 if (confirm('정말 삭제하시겠습니까?')) {
                     if (options.onDelete) {
                         options.onDelete(popup);
@@ -393,8 +405,8 @@
                 }
             });
             
-            // 닫기 버튼들
-            $popup.find('.popup-close, .popup-close-btn').on('click', () => {
+            // 닫기 버튼들 (다양한 클래스 지원)
+            $popup.find('.popup-close, .popup-close-btn, [class*="popup-close"]').on('click', () => {
                 if (options.onClose) {
                     options.onClose(popup);
                 }
