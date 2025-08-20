@@ -192,6 +192,17 @@
             </div>
         </div>
 
+        <!-- 변경 감지 기능 데모 -->
+        <div class="demo-section">
+            <h3>🔍 변경 감지 기능 테스트</h3>
+            <p>텍스트를 수정하면 저장 버튼이 자동으로 활성화/비활성화됩니다.</p>
+            <div class="demo-buttons">
+                <button class="demo-btn demo-btn-warning" onclick="showChangeDetectionDemo()">
+                    변경 감지 데모
+                </button>
+            </div>
+        </div>
+
         <!-- HTTP 요청 시뮬레이션 -->
         <div class="demo-section">
             <h3>🌐 HTTP 요청 시뮬레이션</h3>
@@ -282,6 +293,49 @@
             });
             
             addLog('SUCCESS', `팝업 생성 완료 (ID: ${popup.id})`);
+        }
+
+        // 변경 감지 데모
+        function showChangeDetectionDemo() {
+            const initialData = `이 텍스트를 수정해보세요!
+
+텍스트를 변경하면:
+✅ 저장 버튼이 활성화됩니다
+❌ 원래 상태로 되돌리면 저장 버튼이 비활성화됩니다
+
+이 기능을 통해 불필요한 저장 요청을 방지할 수 있습니다.`;
+
+            addLog('INFO', '변경 감지 데모 팝업 열기');
+            
+            const popup = PopupManager.show('cache', initialData, {
+                title: '📝 변경 감지 기능 데모',
+                onSave: function(data, popup) {
+                    addLog('SAVE', '변경된 데이터 저장 완료');
+                    // 저장 후 원본 데이터 업데이트
+                    popup.originalData = popup.getData();
+                    popup.updateSaveButton();
+                    
+                    // 실제 서버 요청 시뮬레이션
+                    setTimeout(() => {
+                        addLog('SUCCESS', '서버 저장 완료 - 저장 버튼이 다시 비활성화됩니다');
+                    }, 500);
+                },
+                onClose: function(popup) {
+                    const isModified = popup.isModified();
+                    if (isModified) {
+                        addLog('WARNING', '변경사항이 있는 상태로 팝업을 닫았습니다');
+                    } else {
+                        addLog('CLOSE', '변경사항 없이 팝업 닫힘');
+                    }
+                }
+            });
+            
+            // 팝업의 변경 상태를 실시간으로 로그에 표시
+            const textarea = popup.element.find('.popup-textarea');
+            textarea.on('input', function() {
+                const isModified = popup.isModified();
+                addLog('CHANGE', `텍스트 변경됨 - 저장버튼 ${isModified ? '활성화' : '비활성화'}`);
+            });
         }
 
         // 샘플 데이터가 있는 Cache 팝업

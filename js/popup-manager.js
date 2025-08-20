@@ -202,6 +202,12 @@
                 box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25) !important;
             }
             
+            .popup-btn-disabled {
+                opacity: 0.5 !important;
+                cursor: not-allowed !important;
+                pointer-events: none !important;
+            }
+            
             .popup-footer {
                 background: #f8f9fa !important;
                 padding: 15px 20px !important;
@@ -329,18 +335,49 @@
             // 강제로 표시 (기존 코드 호환성)
             $popup.show();
             
+            // 입력 텍스트에 변경 이벤트 바인딩
+            $popup.find('.popup-textarea').on('input', () => {
+                if (popup && popup.updateSaveButton) {
+                    popup.updateSaveButton();
+                }
+            });
+            
             // 팝업 인스턴스 생성
             const popup = {
                 id: popupId,
                 type: type,
                 element: $popup,
+                originalData: data, // 원본 데이터 저장
                 getData: () => $popup.find('.popup-textarea').val(),
-                setData: (newData) => $popup.find('.popup-textarea').val(newData),
-                close: () => this.hide(popupId)
+                setData: (newData) => {
+                    $popup.find('.popup-textarea').val(newData);
+                    popup.originalData = newData; // 원본 데이터 업데이트
+                    popup.updateSaveButton(); // 저장 버튼 상태 업데이트
+                },
+                close: () => this.hide(popupId),
+                // 변경 여부 확인 메서드
+                isModified: () => {
+                    const currentData = popup.getData();
+                    return currentData !== popup.originalData;
+                },
+                // 저장 버튼 상태 업데이트 메서드
+                updateSaveButton: () => {
+                    const $saveBtn = $popup.find('.popup-save, [class*="popup-save"]');
+                    const isChanged = popup.isModified();
+                    
+                    if (isChanged) {
+                        $saveBtn.prop('disabled', false).removeClass('popup-btn-disabled');
+                    } else {
+                        $saveBtn.prop('disabled', true).addClass('popup-btn-disabled');
+                    }
+                }
             };
             
             // 이벤트 바인딩
             this.bindEvents(popup, options);
+            
+            // 초기 저장 버튼 상태 설정
+            popup.updateSaveButton();
             
             // 포커스 설정
             setTimeout(() => {
