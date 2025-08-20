@@ -7,6 +7,36 @@
  * - 탭↔폼 동기화
  * - 폼 값 추출
  */
+/**
+ * TabFormSync
+ *
+ * Simple tab <-> form synchronization utility.
+ *
+ * Public API (brief):
+ * - constructor(config)
+ *   - config.apiUrl: REST endpoint for menu list
+ *   - config.tabContainer: selector for tab container (default '#tabContainer')
+ *   - config.formContainer: selector for form container (default '#formContainer')
+ *   - config.useInternalCSS: boolean to enable built-in CSS (default true)
+ *   - config.useLocalData / config.localMenuData: for testing with local menu arrays
+ *   - config.onTabChange(menuId, menuName)
+ *   - config.onFormChange(formValues)
+ *
+ * Methods:
+ * - init(): load menus and build UI
+ * - registerSendHandler(menuId, handler): register external SEND handler for a menu
+ * - unregisterSendHandler(menuId): remove registered handler
+ * - getValues(menuId?): returns {menuId, menuName, values}
+ * - getRequestData(menuId?): merges form values + tagData for requests
+ * - setTagData(menuId, tagInfo), getTagData(menuId?), clearTagData(menuId?)
+ * - getAllTagData(): returns stored tag data map as plain object
+ *
+ * Notes:
+ * - registerSendHandler allows consumers to provide a function(formValues, meta)
+ *   which will be invoked on Enter (Shift+Enter preserved for newline) for
+ *   menus that need SEND behavior (e.g. '2004'). IME composition events are
+ *   considered to avoid premature send.
+ */
 class TabFormSync {
     constructor(config) {
         this.apiUrl = config.apiUrl || '/api/menu/list';
@@ -14,6 +44,7 @@ class TabFormSync {
         this.formContainer = config.formContainer || '#formContainer';
         this.onTabChange = config.onTabChange || null;
         this.onFormChange = config.onFormChange || null;
+        this.onKeyboardEvent = config.onKeyboardEvent || null; // 키보드 이벤트 콜백
         
         // CSS 설정
         this.useInternalCSS = config.useInternalCSS !== false; // 기본값 true
@@ -28,27 +59,26 @@ class TabFormSync {
         
         // Tag 데이터 별도 저장소 (UI와 독립적)
         this.tagData = new Map();
+        // 메뉴별 SEND 핸들러 저장소
+        this._sendHandlers = new Map();
     }
 
     /**
      * 시작
      */
     async init() {
-        console.log('TabFormSync 시작...');
-        
         // 내장 CSS 적용
         if (this.useInternalCSS) {
             this.applyInternalCSS();
         }
-        
+
         try {
             await this.loadMenus();
             this.createTabs();
             this.createForms();
             this.activateFirst();
-            console.log('완료!');
         } catch (error) {
-            console.error('실패:', error);
+            console.error('TabFormSync init failed:', error);
             this.useFallback();
         }
     }
@@ -63,7 +93,7 @@ class TabFormSync {
         }
 
         const response = await fetch(this.apiUrl);
-        if (!response.ok) throw new Error('API 호출 실패');
+    if (!response.ok) throw new Error('API 호출 실패');
         
         const data = await response.json();
         this.menus = Array.isArray(data) ? data : (data.menus || data.menuList || []);
@@ -113,7 +143,7 @@ class TabFormSync {
             const formConfig = this.getFormConfig(menu.id);
             if (formConfig) {
                 formConfig.forEach(field => {
-                    $form.append(this.createField(field));
+                    $form.append(this.createField(field, menu.id));
                 });
             } else {
                 $form.append(`<p>${menu.name} 설정 없음</p>`);
@@ -126,7 +156,7 @@ class TabFormSync {
     /**
      * 폼 필드 생성
      */
-    createField(field) {
+    createField(field, menuId) {
         const $group = $('<div>').addClass('field-group');
         const $label = $('<label>').text(field.label);
         
@@ -144,6 +174,42 @@ class TabFormSync {
             $input = $('<textarea>')
                 .attr('id', field.id)
                 .attr('placeholder', field.placeholder || '');
+            
+            // 메뉴 2004(지식질문) 또는 해당 메뉴에 등록된 send handler가 있는 경우에만
+            // Enter 키를 SEND로 사용하도록 바인딩합니다. Shift+Enter는 줄바꿈을 유지합니다.
+            // IME 입력 중 Enter(조합완료)를 무시하도록 composition 이벤트를 처리합니다.
+                try {
+                    const shouldBindSend = String(menuId) === '2004' || this._sendHandlers.has(String(menuId));
+                if (shouldBindSend) {
+                    let composing = false;
+                    $input.on('compositionstart', () => { composing = true; });
+                    $input.on('compositionend', () => { composing = false; });
+
+                    $input.on('keydown', (e) => {
+                        if (composing) return; // IME 조합 중에는 무시
+                        const key = e.key || e.keyCode || e.which;
+                        const isEnter = key === 'Enter' || key === 13 || key === '13';
+                        if (isEnter && !e.shiftKey) {
+                            const handler = this._sendHandlers.get(String(menuId));
+                            if (typeof handler === 'function') {
+                                e.preventDefault();
+                                const formValues = this.getValues(menuId);
+                                const rawText = $input.val();
+                                try {
+                                    const maybePromise = handler(formValues, { menuId: String(menuId), rawText, element: $input[0] });
+                                    if (maybePromise && typeof maybePromise.then === 'function') {
+                                        // external consumer handles Promise
+                                    }
+                                } catch (err) {
+                                    console.error('sendHandler error', err);
+                                }
+                            }
+                        }
+                    });
+                }
+            } catch (e) {
+                console.warn('Failed to bind send handler for textarea', e);
+            }
         } else {
             $input = $('<input>')
                 .attr('type', 'text')
@@ -155,11 +221,62 @@ class TabFormSync {
         
         $input.on('change input', () => {
             if (this.onFormChange) {
-                this.onFormChange(this.getValues());
+                this.onFormChange(this.getValues(menuId));
             }
         });
 
         return $group.append($label).append($input);
+    }
+
+    /**
+     * 외부에서 메뉴별 SEND 핸들러 등록
+     * handler(formValues, meta) - meta: {menuId, rawText, element}
+     */
+    registerSendHandler(menuId, handler) {
+    if (!menuId || typeof handler !== 'function') return false;
+        this._sendHandlers.set(String(menuId), handler);
+        // 이미 생성된 textarea가 있으면 동적으로 이벤트 바인딩
+        try {
+            const $textarea = $(`#form-${menuId}`).find('textarea');
+            if ($textarea && $textarea.length) {
+                let composing = false;
+                $textarea.off('.sendHandler');
+                $textarea.on('compositionstart.sendHandler', () => { composing = true; });
+                $textarea.on('compositionend.sendHandler', () => { composing = false; });
+
+                $textarea.on('keydown.sendHandler', (e) => {
+                    if (composing) return;
+                    const key = e.key || e.keyCode || e.which;
+                    const isEnter = key === 'Enter' || key === 13 || key === '13';
+                    if (isEnter && !e.shiftKey) {
+                        e.preventDefault();
+                        const formValues = this.getValues(menuId);
+                        const rawText = $textarea.val();
+                        try {
+                            handler(formValues, { menuId: String(menuId), rawText, element: $textarea[0] });
+                        } catch (err) {
+                            console.error('sendHandler error', err);
+                        }
+                    }
+                });
+            }
+        } catch (e) {
+            console.warn('Failed to bind dynamic send handler', e);
+        }
+        return true;
+    }
+
+    /**
+     * 등록 해제
+     */
+    unregisterSendHandler(menuId) {
+        if (!menuId) return false;
+        try {
+            $(`#form-${menuId}`).find('textarea').off('.sendHandler');
+        } catch (e) {
+            // ignore
+        }
+        return this._sendHandlers.delete(String(menuId));
     }
 
     /**
@@ -205,10 +322,12 @@ class TabFormSync {
     /**
      * 폼 값 추출
      */
-    getValues() {
-        if (!this.currentMenuId) return null;
+    // getValues: optional menuId parameter to extract values for a specific form
+    getValues(menuId) {
+        const targetMenuId = menuId || this.currentMenuId;
+        if (!targetMenuId) return null;
 
-        const $form = $(`#form-${this.currentMenuId}`);
+        const $form = $(`#form-${targetMenuId}`);
         const values = {};
 
         $form.find('select, input, textarea').each(function() {
@@ -224,8 +343,8 @@ class TabFormSync {
         });
 
         return {
-            menuId: this.currentMenuId,
-            menuName: this.getMenuName(this.currentMenuId),
+            menuId: targetMenuId,
+            menuName: this.getMenuName(targetMenuId),
             values: values
         };
     }
@@ -297,6 +416,10 @@ class TabFormSync {
      */
     useFallback() {
         console.log('폴백 데이터 사용');
+        // 내장 CSS 적용 (fallback에서도 스타일이 필요함)
+        if (this.useInternalCSS) {
+            try { this.applyInternalCSS(); } catch (e) { console.warn('applyInternalCSS failed', e); }
+        }
         this.menus = [
             { id: "2001", name: "상품정보", description: "상품 정보 요약", first_ref_text: 1 },
             { id: "2002", name: "상품비교", description: "상품 비교 분석", first_ref_text: 2 },
@@ -572,7 +695,7 @@ class TabFormSync {
      */
     getRequestData(menuId = null) {
         const targetMenuId = menuId || this.currentMenuId;
-        const formData = this.getValues();
+        const formData = this.getValues(targetMenuId);
         const tagData = this.getTagData(targetMenuId);
         
         // 메뉴 2003(상품요약)의 경우 Tag 데이터 우선 사용
