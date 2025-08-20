@@ -200,6 +200,9 @@
                 <button class="demo-btn demo-btn-warning" onclick="showChangeDetectionDemo()">
                     변경 감지 데모
                 </button>
+                <button class="demo-btn demo-btn-warning" onclick="showHtmlEntityDemo()">
+                    HTML 엔티티 테스트
+                </button>
             </div>
         </div>
 
@@ -295,6 +298,57 @@
             addLog('SUCCESS', `팝업 생성 완료 (ID: ${popup.id})`);
         }
 
+        // HTML 엔티티 테스트 데모
+        function showHtmlEntityDemo() {
+            // HTML 엔티티가 포함된 원본 데이터
+            const dataWithEntities = `API 경로 설정:
+- 기본 경로: &#47;api&#47;v1&#47;products
+- 상세 경로: &#47;api&#47;v1&#47;products&#47;{id}
+- 검색 경로: &#47;api&#47;v1&#47;search?q={query}&amp;type=product
+
+HTML 특수문자:
+- 앰퍼샌드: &amp;
+- 작은따옴표: &#39;
+- 큰따옴표: &quot;
+- 태그: &lt;div&gt;content&lt;&#47;div&gt;
+
+이 텍스트를 그대로 두면 저장 버튼이 비활성화 상태를 유지합니다.`;
+
+            addLog('INFO', 'HTML 엔티티 테스트 팝업 열기');
+            addLog('DEBUG', '원본 데이터에 &#47;, &amp;, &lt; 등의 엔티티가 포함됨');
+            
+            const popup = PopupManager.show('cache', dataWithEntities, {
+                title: '🔤 HTML 엔티티 비교 테스트',
+                onSave: function(data, popup) {
+                    addLog('SAVE', 'HTML 엔티티 데이터 저장 완료');
+                    // 저장 후 원본 데이터 업데이트
+                    popup.originalData = popup.getData();
+                    popup.updateSaveButton();
+                },
+                onClose: function(popup) {
+                    const isModified = popup.isModified();
+                    addLog('CLOSE', `팝업 닫힘 - 변경사항: ${isModified ? '있음' : '없음'}`);
+                }
+            });
+            
+            // 팝업의 변경 상태를 실시간으로 로그에 표시
+            const textarea = popup.element.find('.popup-textarea');
+            textarea.on('input', function() {
+                const isModified = popup.isModified();
+                const editedData = popup.getData();
+                const originalData = popup.originalData; // 원본은 절대 변경하지 않음
+                
+                addLog('CHANGE', `원본 기준 비교 결과 - 변경됨: ${isModified}`);
+                
+                // 디버그 정보: 편집된 데이터가 원본 형식으로 어떻게 변환되는지 표시
+                const convertedData = PopupManager.convertEditedDataToOriginalFormat(editedData, originalData);
+                addLog('DEBUG', `편집됨: "${editedData.substring(0, 30)}..."`);
+                addLog('DEBUG', `변환됨: "${convertedData.substring(0, 30)}..."`);
+                addLog('DEBUG', `원본(불변): "${originalData.substring(0, 30)}..."`);
+                addLog('DEBUG', `비교결과: ${convertedData === originalData ? '일치' : '불일치'}`);
+            });
+        }
+
         // 변경 감지 데모
         function showChangeDetectionDemo() {
             const initialData = `이 텍스트를 수정해보세요!
@@ -335,6 +389,12 @@
             textarea.on('input', function() {
                 const isModified = popup.isModified();
                 addLog('CHANGE', `텍스트 변경됨 - 저장버튼 ${isModified ? '활성화' : '비활성화'}`);
+                
+                // 상세 디버그 정보 - 원본은 절대 변경하지 않음을 강조
+                const editedData = popup.getData();
+                const originalData = popup.originalData; // 원본 불변
+                const convertedData = PopupManager.convertEditedDataToOriginalFormat(editedData, originalData);
+                addLog('DEBUG', `편집 -> 변환 -> 원본 비교: ${convertedData === originalData ? '동일' : '다름'}`);
             });
         }
 

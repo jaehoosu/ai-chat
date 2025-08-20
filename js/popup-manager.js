@@ -290,6 +290,32 @@
          * @param {object} options - 옵션 {title, onSave, onDelete, onClose, buttonClass}
          * @returns {object} 팝업 인스턴스
          */
+        // 편집된 데이터를 원본의 HTML 엔티티 형식으로 변환 (원본은 절대 변경하지 않음)
+        convertEditedDataToOriginalFormat(editedData, originalData) {
+            if (!editedData) return '';
+            if (!originalData) return editedData;
+            
+            // 원본에 HTML 엔티티가 있는지 확인
+            const hasEntities = /&[a-zA-Z0-9#]+;/.test(originalData);
+            
+            if (!hasEntities) {
+                // 원본에 엔티티가 없으면 편집된 데이터를 그대로 반환
+                return editedData;
+            }
+            
+            // 편집된 데이터를 원본과 동일한 HTML 엔티티 형식으로 변환
+            // 순서가 중요: & 문자를 먼저 처리해야 함
+            let converted = editedData
+                .replace(/&/g, '&amp;')     // & -> &amp; (가장 먼저 처리)
+                .replace(/</g, '&lt;')      // < -> &lt;
+                .replace(/>/g, '&gt;')      // > -> &gt;
+                .replace(/"/g, '&quot;')    // " -> &quot;
+                .replace(/'/g, '&#39;')     // ' -> &#39;
+                .replace(/\//g, '&#47;');   // / -> &#47;
+            
+            return converted;
+        }
+
         show(type, data = '', options = {}) {
             this.injectStyles();
             
@@ -357,8 +383,14 @@
                 close: () => this.hide(popupId),
                 // 변경 여부 확인 메서드
                 isModified: () => {
-                    const currentData = popup.getData();
-                    return currentData !== popup.originalData;
+                    const currentEditedData = popup.getData();
+                    const originalData = popup.originalData; // 원본은 절대 변경하지 않음
+                    
+                    // 편집된 데이터만 원본 형식으로 변환하여 원본과 비교
+                    const convertedEditedData = this.convertEditedDataToOriginalFormat(currentEditedData, originalData);
+                    
+                    // 변환된 편집 데이터와 원본 데이터 직접 비교
+                    return convertedEditedData !== originalData;
                 },
                 // 저장 버튼 상태 업데이트 메서드
                 updateSaveButton: () => {
