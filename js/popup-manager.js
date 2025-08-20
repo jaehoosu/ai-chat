@@ -67,39 +67,45 @@
         }
     };
 
-    // 기본 CSS 스타일
+    // 기본 CSS 스타일 (강력한 우선순위)
     const PopupStyles = `
         <style id="popup-manager-styles">
             .popup-overlay {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.5);
-                z-index: 10000;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                font-family: Arial, sans-serif;
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+                background: rgba(0, 0, 0, 0.5) !important;
+                z-index: 999999 !important;
+                display: flex !important;
+                justify-content: center !important;
+                align-items: center !important;
+                font-family: Arial, sans-serif !important;
+                box-sizing: border-box !important;
             }
             
             .popup-container {
-                background: white;
-                border-radius: 8px;
-                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+                background: white !important;
+                border-radius: 8px !important;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
                 width: 600px;
                 height: 500px;
-                min-width: 400px;
-                min-height: 300px;
-                max-width: 90vw;
-                max-height: 90vh;
-                overflow: hidden;
-                animation: popupFadeIn 0.3s ease;
+                min-width: 400px !important;
+                min-height: 300px !important;
+                max-width: 90vw !important;
+                max-height: 90vh !important;
+                overflow: hidden !important;
+                animation: popupFadeIn 0.3s ease !important;
                 position: relative;
                 resize: both;
-                display: flex;
-                flex-direction: column;
+                display: flex !important;
+                flex-direction: column !important;
+                margin: auto;
+                transform: none;
+                left: 0;
+                top: 0;
+                box-sizing: border-box !important;
             }
             
             @keyframes popupFadeIn {
@@ -108,103 +114,103 @@
             }
             
             .popup-header {
-                background: #f8f9fa;
-                padding: 15px 20px;
-                border-bottom: 1px solid #dee2e6;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                flex-shrink: 0;
-                cursor: move;
-                user-select: none;
-                position: relative;
+                background: #f8f9fa !important;
+                padding: 15px 20px !important;
+                border-bottom: 1px solid #dee2e6 !important;
+                display: flex !important;
+                justify-content: space-between !important;
+                align-items: center !important;
+                flex-shrink: 0 !important;
+                cursor: move !important;
+                user-select: none !important;
+                position: relative !important;
+                box-sizing: border-box !important;
             }
             
             .popup-header:hover {
-                background: #e9ecef;
+                background: #e9ecef !important;
             }
             
             .popup-title {
-                pointer-events: none;
-            }
-            
-            .popup-title {
-                margin: 0;
-                font-size: 18px;
-                font-weight: 600;
-                color: #333;
+                pointer-events: none !important;
+                margin: 0 !important;
+                font-size: 18px !important;
+                font-weight: 600 !important;
+                color: #333 !important;
             }
             
             .popup-close-btn {
-                background: none;
-                border: none;
-                font-size: 24px;
-                color: #6c757d;
-                cursor: pointer;
-                padding: 0;
-                width: 30px;
-                height: 30px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                border-radius: 4px;
+                background: none !important;
+                border: none !important;
+                font-size: 24px !important;
+                color: #6c757d !important;
+                cursor: pointer !important;
+                padding: 0 !important;
+                width: 30px !important;
+                height: 30px !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                border-radius: 4px !important;
             }
             
             .popup-close-btn:hover {
-                background: #e9ecef;
-                color: #495057;
+                background: #e9ecef !important;
+                color: #495057 !important;
             }
             
             .popup-body {
-                padding: 20px;
-                flex: 1;
-                overflow-y: auto;
-                display: flex;
-                flex-direction: column;
+                padding: 20px !important;
+                flex: 1 !important;
+                overflow-y: auto !important;
+                display: flex !important;
+                flex-direction: column !important;
+                box-sizing: border-box !important;
             }
             
             .popup-form-group {
-                margin-bottom: 15px;
-                flex: 1;
-                display: flex;
-                flex-direction: column;
+                margin-bottom: 15px !important;
+                flex: 1 !important;
+                display: flex !important;
+                flex-direction: column !important;
             }
             
             .popup-label {
-                display: block;
-                margin-bottom: 8px;
-                font-weight: 600;
-                color: #333;
-                font-size: 14px;
+                display: block !important;
+                margin-bottom: 8px !important;
+                font-weight: 600 !important;
+                color: #333 !important;
+                font-size: 14px !important;
             }
             
             .popup-textarea {
-                width: 100%;
-                flex: 1;
-                min-height: 150px;
-                padding: 12px;
-                border: 1px solid #ddd;
-                border-radius: 4px;
-                font-size: 14px;
-                font-family: 'Courier New', monospace;
-                resize: none;
-                box-sizing: border-box;
+                width: 100% !important;
+                flex: 1 !important;
+                min-height: 150px !important;
+                padding: 12px !important;
+                border: 1px solid #ddd !important;
+                border-radius: 4px !important;
+                font-size: 14px !important;
+                font-family: 'Courier New', monospace !important;
+                resize: none !important;
+                box-sizing: border-box !important;
             }
             
             .popup-textarea:focus {
-                outline: none;
-                border-color: #007bff;
-                box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+                outline: none !important;
+                border-color: #007bff !important;
+                box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25) !important;
             }
             
             .popup-footer {
-                background: #f8f9fa;
-                padding: 15px 20px;
-                border-top: 1px solid #dee2e6;
-                display: flex;
-                gap: 10px;
-                justify-content: flex-end;
-                flex-shrink: 0;
+                background: #f8f9fa !important;
+                padding: 15px 20px !important;
+                border-top: 1px solid #dee2e6 !important;
+                display: flex !important;
+                gap: 10px !important;
+                justify-content: flex-end !important;
+                flex-shrink: 0 !important;
+                box-sizing: border-box !important;
             }
             
             /* 리사이즈 핸들 스타일링 */
@@ -214,40 +220,40 @@
             }
             
             .popup-btn {
-                padding: 8px 16px;
-                border: none;
-                border-radius: 4px;
-                font-size: 14px;
-                font-weight: 500;
-                cursor: pointer;
-                transition: all 0.2s ease;
+                padding: 8px 16px !important;
+                border: none !important;
+                border-radius: 4px !important;
+                font-size: 14px !important;
+                font-weight: 500 !important;
+                cursor: pointer !important;
+                transition: all 0.2s ease !important;
             }
             
             .popup-btn-primary {
-                background: #007bff;
-                color: white;
+                background: #007bff !important;
+                color: white !important;
             }
             
             .popup-btn-primary:hover {
-                background: #0056b3;
+                background: #0056b3 !important;
             }
             
             .popup-btn-danger {
-                background: #dc3545;
-                color: white;
+                background: #dc3545 !important;
+                color: white !important;
             }
             
             .popup-btn-danger:hover {
-                background: #c82333;
+                background: #c82333 !important;
             }
             
             .popup-btn-secondary {
-                background: #6c757d;
-                color: white;
+                background: #6c757d !important;
+                color: white !important;
             }
             
             .popup-btn-secondary:hover {
-                background: #545b62;
+                background: #545b62 !important;
             }
         </style>
     `;
@@ -293,7 +299,34 @@
             
             // DOM에 추가
             const $popup = $(popupHtml);
+            
+            // 기존 코드 호환성을 위한 강제 스타일 적용
+            $popup.css({
+                'display': 'flex !important',
+                'position': 'fixed !important',
+                'top': '0 !important',
+                'left': '0 !important',
+                'width': '100% !important',
+                'height': '100% !important',
+                'z-index': '999999 !important',
+                'justify-content': 'center !important',
+                'align-items': 'center !important'
+            });
+            
+            // 컨테이너 중앙 정렬 강제 (드래그 가능하도록 수정)
+            const $container = $popup.find('.popup-container');
+            $container.css({
+                'position': 'relative',
+                'margin': 'auto',
+                'transform': 'none',
+                'left': '0',
+                'top': '0'
+            });
+            
             $('body').append($popup);
+            
+            // 강제로 표시 (기존 코드 호환성)
+            $popup.show();
             
             // 팝업 인스턴스 생성
             const popup = {
@@ -505,10 +538,12 @@
                 
                 if (!dragStarted) {
                     dragStarted = true;
+                    // 드래그 시작 시에만 위치 설정 변경
                     $container.css({
-                        position: 'relative',
-                        left: currentLeft,
-                        top: currentTop
+                        'position': 'relative',
+                        'left': currentLeft + 'px',
+                        'top': currentTop + 'px',
+                        'margin': '0'
                     });
                     $handle.css('cursor', 'grabbing');
                 }
@@ -525,8 +560,8 @@
                 const constrainedTop = Math.max(-50, Math.min(maxTop + 50, newTop));
                 
                 $container.css({
-                    left: constrainedLeft,
-                    top: constrainedTop
+                    left: constrainedLeft + 'px',
+                    top: constrainedTop + 'px'
                 });
                 
                 e.preventDefault();
