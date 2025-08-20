@@ -192,6 +192,17 @@
             </div>
         </div>
 
+        <!-- 편집 데이터 가져오기 데모 -->
+        <div class="demo-section">
+            <h3>📤 편집 데이터 가져오기 테스트</h3>
+            <p>다양한 형식으로 편집된 데이터를 가져와 비교해보세요.</p>
+            <div class="demo-buttons">
+                <button class="demo-btn demo-btn-info" onclick="showDataExtractionDemo()">
+                    데이터 추출 데모
+                </button>
+            </div>
+        </div>
+
         <!-- 변경 감지 기능 데모 -->
         <div class="demo-section">
             <h3>🔍 변경 감지 기능 테스트</h3>
@@ -296,6 +307,75 @@
             });
             
             addLog('SUCCESS', `팝업 생성 완료 (ID: ${popup.id})`);
+        }
+
+        // 편집 데이터 추출 데모
+        function showDataExtractionDemo() {
+            const sampleData = `  API 설정 예시:
+            
+Base URL: &#47;api&#47;v1
+Search: &#47;search?q={query}&amp;type=product
+
+HTML 태그 예시:
+&lt;div class=&quot;content&quot;&gt;
+    &lt;span&gt;내용&lt;&#47;span&gt;
+&lt;&#47;div&gt;
+
+  `;
+
+            addLog('INFO', '편집 데이터 추출 데모 팝업 열기');
+            
+            const popup = PopupManager.show('cache', sampleData, {
+                title: '📤 편집 데이터 추출 데모',
+                onSave: function(data, popup) {
+                    // 다양한 형식으로 데이터 추출 테스트
+                    addLog('SAVE', '=== 편집된 데이터 추출 결과 ===');
+                    
+                    const rawData = popup.getData();
+                    addLog('RAW', `원본: "${rawData.substring(0, 50)}..."`);
+                    
+                    const trimmedData = popup.getEditedData({ format: 'trimmed' });
+                    addLog('TRIMMED', `공백제거: "${trimmedData.substring(0, 50)}..."`);
+                    
+                    const encodedData = popup.getEditedData({ format: 'encoded' });
+                    addLog('ENCODED', `인코딩: "${encodedData.substring(0, 50)}..."`);
+                    
+                    const cleanData = popup.getEditedData({ 
+                        format: 'trimmed', 
+                        removeEmptyLines: true,
+                        normalizeLineBreaks: true 
+                    });
+                    addLog('CLEAN', `정리됨: "${cleanData.substring(0, 50)}..."`);
+                    
+                    // 원본 형식으로 변환 테스트
+                    const convertedData = popup.convertToOriginalFormat();
+                    addLog('CONVERT', `변환됨: "${convertedData.substring(0, 50)}..."`);
+                    
+                    // 변경 여부 확인
+                    const isModified = popup.isModified();
+                    addLog('CHECK', `변경여부: ${isModified ? '변경됨' : '변경안됨'}`);
+                    
+                    popup.close();
+                },
+                onClose: function(popup) {
+                    addLog('CLOSE', '데이터 추출 데모 팝업 닫힘');
+                }
+            });
+            
+            // 실시간 데이터 추출 테스트
+            const textarea = popup.element.find('.popup-textarea');
+            let lastLogTime = 0;
+            
+            textarea.on('input', function() {
+                // 로그 스팸 방지 (0.5초마다만 로그)
+                const now = Date.now();
+                if (now - lastLogTime < 500) return;
+                lastLogTime = now;
+                
+                addLog('LIVE', '실시간 데이터 형식:');
+                addLog('  RAW', `"${popup.getData().substring(0, 30)}..."`);
+                addLog('  ENCODED', `"${popup.getEditedData({format: 'encoded'}).substring(0, 30)}..."`);
+            });
         }
 
         // HTML 엔티티 테스트 데모

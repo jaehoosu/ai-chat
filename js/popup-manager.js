@@ -375,10 +375,57 @@
                 element: $popup,
                 originalData: data, // 원본 데이터 저장
                 getData: () => $popup.find('.popup-textarea').val(),
+                // 편집된 데이터를 다양한 형식으로 가져오는 메서드
+                getEditedData: (options = {}) => {
+                    const rawData = $popup.find('.popup-textarea').val();
+                    
+                    // 기본 옵션
+                    const opts = {
+                        format: 'raw',           // 'raw', 'encoded', 'trimmed'
+                        removeEmptyLines: false, // 빈 줄 제거 여부
+                        normalizeLineBreaks: false, // 줄바꿈 문자 통일 여부
+                        ...options
+                    };
+                    
+                    let result = rawData;
+                    
+                    // 형식에 따른 처리
+                    switch (opts.format) {
+                        case 'encoded':
+                            // 원본 형식으로 인코딩
+                            result = popup.convertToOriginalFormat(rawData);
+                            break;
+                        case 'trimmed':
+                            // 앞뒤 공백 제거
+                            result = rawData.trim();
+                            break;
+                        case 'raw':
+                        default:
+                            // 원본 그대로
+                            result = rawData;
+                            break;
+                    }
+                    
+                    // 빈 줄 제거
+                    if (opts.removeEmptyLines) {
+                        result = result.replace(/^\s*[\r\n]/gm, '');
+                    }
+                    
+                    // 줄바꿈 문자 통일
+                    if (opts.normalizeLineBreaks) {
+                        result = result.replace(/\r\n/g, '\n');
+                    }
+                    
+                    return result;
+                },
                 setData: (newData) => {
                     $popup.find('.popup-textarea').val(newData);
                     popup.originalData = newData; // 원본 데이터 업데이트
                     popup.updateSaveButton(); // 저장 버튼 상태 업데이트
+                },
+                // 편집된 데이터를 원본 형식으로 변환하는 메서드
+                convertToOriginalFormat: (editedData) => {
+                    return this.convertEditedDataToOriginalFormat(editedData || popup.getData(), popup.originalData);
                 },
                 close: () => this.hide(popupId),
                 // 변경 여부 확인 메서드
