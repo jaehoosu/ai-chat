@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PopupManager 활용 샘플</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- 필요한 모듈들 로드 -->
+    <script src="js/ajax-util.js"></script>
+    <script src="js/popup-manager.js"></script>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #007bff;
+        }
+        
+        .header h1 {
+            color: #007bff;
+            margin: 0;
+        }
+        
+        .header p {
+            color: #6c757d;
+            margin: 10px 0 0 0;
+        }
+        
+        .demo-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border-left: 4px solid #007bff;
+        }
+        
+        .demo-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        
+        .demo-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .demo-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .demo-btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        
+        .demo-btn-primary:hover {
+            background: #0056b3;
+        }
+        
+        .demo-btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .demo-btn-success:hover {
+            background: #1e7e34;
+        }
+        
+        .demo-btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+        
+        .demo-btn-info:hover {
+            background: #138496;
+        }
+        
+        .demo-btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+        
+        .demo-btn-warning:hover {
+            background: #e0a800;
+        }
+        
+        .log-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #2d3748;
+            color: #a0aec0;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .log-section h4 {
+            margin-top: 0;
+            color: #63b3ed;
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 2px 0;
+        }
+        
+        .log-time {
+            color: #68d391;
+        }
+        
+        .log-type {
+            color: #fbb6ce;
+            font-weight: bold;
+        }
+        
+        .clear-log {
+            background: #4a5568;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 11px;
+            margin-bottom: 10px;
+        }
+        
+        .clear-log:hover {
+            background: #2d3748;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 헤더 -->
+        <div class="header">
+            <h1>🔧 PopupManager 활용 샘플</h1>
+            <p>Cache/Prompt 편집 팝업을 모듈화하여 깔끔하게 처리</p>
+        </div>
+
+        <!-- 기본 팝업 데모 -->
+        <div class="demo-section">
+            <h3>📝 기본 팝업 테스트</h3>
+            <p>Cache와 Prompt 타입의 기본 팝업을 테스트해보세요.</p>
+            <div class="demo-buttons">
+                <button class="demo-btn demo-btn-primary" onclick="showCachePopup()">
+                    Cache 팝업 열기
+                </button>
+                <button class="demo-btn demo-btn-success" onclick="showPromptPopup()">
+                    Prompt 팝업 열기
+                </button>
+            </div>
+        </div>
+
+        <!-- 데이터가 있는 팝업 데모 -->
+        <div class="demo-section">
+            <h3>📋 데이터 포함 팝업 테스트</h3>
+            <p>미리 정의된 데이터가 포함된 팝업을 테스트해보세요.</p>
+            <div class="demo-buttons">
+                <button class="demo-btn demo-btn-info" onclick="showCacheWithData()">
+                    샘플 Cache 데이터
+                </button>
+                <button class="demo-btn demo-btn-info" onclick="showPromptWithData()">
+                    샘플 Prompt 데이터
+                </button>
+            </div>
+        </div>
+
+        <!-- HTTP 요청 시뮬레이션 -->
+        <div class="demo-section">
+            <h3>🌐 HTTP 요청 시뮬레이션</h3>
+            <p>실제 서버 응답을 시뮬레이션하여 팝업을 표시합니다.</p>
+            <div class="demo-buttons">
+                <button class="demo-btn demo-btn-warning" onclick="simulateHttpResponse('cache')">
+                    Cache 응답 시뮬레이션
+                </button>
+                <button class="demo-btn demo-btn-warning" onclick="simulateHttpResponse('prompt')">
+                    Prompt 응답 시뮬레이션
+                </button>
+            </div>
+        </div>
+
+        <!-- 로그 섹션 -->
+        <div class="log-section">
+            <h4>📊 이벤트 로그</h4>
+            <button class="clear-log" onclick="clearLog()">로그 지우기</button>
+            <div id="log-container">
+                <!-- 로그 엔트리들이 여기 추가됩니다 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 로그 함수
+        function addLog(type, message) {
+            const now = new Date().toLocaleTimeString();
+            const logHtml = `
+                <div class="log-entry">
+                    <span class="log-time">[${now}]</span>
+                    <span class="log-type">[${type}]</span>
+                    ${message}
+                </div>
+            `;
+            $('#log-container').append(logHtml);
+            
+            // 스크롤을 맨 아래로
+            const logSection = document.querySelector('.log-section');
+            logSection.scrollTop = logSection.scrollHeight;
+        }
+
+        function clearLog() {
+            $('#log-container').empty();
+        }
+
+        // 기본 Cache 팝업
+        function showCachePopup() {
+            addLog('INFO', 'Cache 팝업 열기 요청');
+            
+            const popup = PopupManager.show('cache', '', {
+                title: '새 캐시 데이터 생성',
+                onSave: function(data, popup) {
+                    addLog('SAVE', `Cache 저장: "${data.substring(0, 50)}${data.length > 50 ? '...' : ''}"`);
+                    
+                    // 실제로는 여기서 서버에 저장 요청
+                    simulateSaveRequest('cache', data);
+                    popup.close();
+                },
+                onDelete: function(popup) {
+                    addLog('DELETE', 'Cache 삭제 요청');
+                    popup.close();
+                },
+                onClose: function(popup) {
+                    addLog('CLOSE', 'Cache 팝업 닫힘');
+                }
+            });
+            
+            addLog('SUCCESS', `팝업 생성 완료 (ID: ${popup.id})`);
+        }
+
+        // 기본 Prompt 팝업
+        function showPromptPopup() {
+            addLog('INFO', 'Prompt 팝업 열기 요청');
+            
+            const popup = PopupManager.show('prompt', '', {
+                title: '새 프롬프트 생성',
+                onSave: function(data, popup) {
+                    addLog('SAVE', `Prompt 저장: "${data.substring(0, 50)}${data.length > 50 ? '...' : ''}"`);
+                    
+                    // 실제로는 여기서 서버에 저장 요청
+                    simulateSaveRequest('prompt', data);
+                    popup.close();
+                },
+                onClose: function(popup) {
+                    addLog('CLOSE', 'Prompt 팝업 닫힘');
+                }
+            });
+            
+            addLog('SUCCESS', `팝업 생성 완료 (ID: ${popup.id})`);
+        }
+
+        // 샘플 데이터가 있는 Cache 팝업
+        function showCacheWithData() {
+            const sampleData = JSON.stringify({
+                "productId": "PROD001",
+                "productName": "T 5G 플랜 A",
+                "description": "최고 속도의 5G 서비스",
+                "price": 55000,
+                "features": ["무제한 데이터", "국제로밍", "5G 우선순위"],
+                "lastUpdated": new Date().toISOString()
+            }, null, 2);
+            
+            addLog('INFO', 'Cache 샘플 데이터 팝업 열기');
+            
+            const popup = PopupManager.show('cache', sampleData, {
+                title: '캐시된 상품 정보 편집',
+                onSave: function(data, popup) {
+                    addLog('SAVE', 'Cache 샘플 데이터 저장 완료');
+                    simulateSaveRequest('cache', data);
+                    popup.close();
+                },
+                onDelete: function(popup) {
+                    addLog('DELETE', 'Cache 샘플 데이터 삭제 완료');
+                    popup.close();
+                },
+                onClose: function(popup) {
+                    addLog('CLOSE', 'Cache 샘플 팝업 닫힘');
+                }
+            });
+        }
+
+        // 샘플 데이터가 있는 Prompt 팝업
+        function showPromptWithData() {
+            const samplePrompt = `당신은 통신사의 상품 정보 전문가입니다.
+
+사용자가 상품에 대해 질문하면 다음 정보를 바탕으로 정확하고 친절하게 답변해주세요:
+
+1. 상품명과 가격 정보
+2. 주요 특징 및 혜택
+3. 이용 조건 및 제한사항
+4. 추천 고객 유형
+
+답변은 200자 이내로 간결하게 작성하고, 전문적이면서도 이해하기 쉽게 설명해주세요.`;
+
+            addLog('INFO', 'Prompt 샘플 데이터 팝업 열기');
+            
+            const popup = PopupManager.show('prompt', samplePrompt, {
+                title: '상품 정보 AI 프롬프트 편집',
+                onSave: function(data, popup) {
+                    addLog('SAVE', 'Prompt 샘플 데이터 저장 완료');
+                    simulateSaveRequest('prompt', data);
+                    popup.close();
+                },
+                onClose: function(popup) {
+                    addLog('CLOSE', 'Prompt 샘플 팝업 닫힘');
+                }
+            });
+        }
+
+        // HTTP 응답 시뮬레이션
+        function simulateHttpResponse(type) {
+            addLog('HTTP', `${type.toUpperCase()} 데이터 요청 시작`);
+            
+            // 로딩 시뮬레이션
+            const startTime = Date.now();
+            
+            // HttpUtil을 사용한 실제 요청 패턴 시뮬레이션
+            const mockUrl = `/api/${type}/data`;
+            const requestData = { id: `${type}_${Date.now()}` };
+            
+            // 실제로는 이렇게 사용됩니다:
+            /*
+            $.http.post(mockUrl, requestData)
+                .then(response => handleServerResponse(type, response))
+                .catch(error => handleServerError(type, error));
+            */
+            
+            // 모의 응답 생성
+            setTimeout(() => {
+                const mockResponse = createMockResponse(type);
+                const responseTime = Date.now() - startTime;
+                
+                addLog('HTTP', `응답 수신 완료 (${responseTime}ms)`);
+                handleServerResponse(type, mockResponse);
+            }, 1000 + Math.random() * 1000); // 1-2초 랜덤 지연
+        }
+
+        // 모의 응답 생성
+        function createMockResponse(type) {
+            if (type === 'cache') {
+                return {
+                    success: true,
+                    data: JSON.stringify({
+                        "cacheKey": "product_PROD002_summary",
+                        "cachedAt": new Date().toISOString(),
+                        "ttl": 3600,
+                        "content": {
+                            "productId": "PROD002", 
+                            "summary": "스탠다드 5G 플랜 - 합리적인 가격의 5G 서비스",
+                            "keyFeatures": ["월 100GB", "기본 속도 보장", "부가서비스 선택"],
+                            "targetCustomers": "가성비를 중시하는 고객"
+                        }
+                    }, null, 2),
+                    metadata: {
+                        source: 'cache',
+                        requestId: `req_${Date.now()}`
+                    }
+                };
+            } else {
+                return {
+                    success: true,
+                    data: `다음은 ${type === 'prompt' ? '프롬프트' : '데이터'} 편집기입니다.
+
+사용자의 ${type === 'prompt' ? '질문' : '요청'}에 대해 다음과 같이 처리해주세요:
+
+1. 요청 내용을 정확히 파악
+2. 관련 정보를 체계적으로 정리
+3. 명확하고 이해하기 쉬운 답변 제공
+4. 필요시 추가 설명이나 예시 제공
+
+처리 시간: ${new Date().toLocaleString()}
+버전: v1.2.3`,
+                    metadata: {
+                        source: type,
+                        requestId: `req_${Date.now()}`
+                    }
+                };
+            }
+        }
+
+        // 서버 응답 처리 (실제 응용에서 사용될 패턴)
+        function handleServerResponse(type, response) {
+            addLog('RESPONSE', `${type.toUpperCase()} 응답 처리 시작`);
+            
+            // 응답 처리 핸들러 매핑 (실제 구현에서 사용할 패턴)
+            const ResponseHandlers = {
+                cache: (response) => {
+                    PopupManager.show('cache', response.data, {
+                        title: '서버에서 받은 캐시 데이터',
+                        onSave: (data) => {
+                            addLog('SAVE', 'Cache 서버 데이터 저장');
+                            simulateSaveRequest('cache', data);
+                        },
+                        onDelete: () => {
+                            addLog('DELETE', 'Cache 서버 데이터 삭제');
+                        },
+                        onClose: () => {
+                            addLog('CLOSE', 'Cache 서버 응답 팝업 닫힘');
+                        }
+                    });
+                },
+                
+                prompt: (response) => {
+                    PopupManager.show('prompt', response.data, {
+                        title: '서버에서 받은 프롬프트',
+                        onSave: (data) => {
+                            addLog('SAVE', 'Prompt 서버 데이터 저장');
+                            simulateSaveRequest('prompt', data);
+                        },
+                        onClose: () => {
+                            addLog('CLOSE', 'Prompt 서버 응답 팝업 닫힘');
+                        }
+                    });
+                }
+            };
+            
+            // 핸들러 실행
+            if (ResponseHandlers[type]) {
+                ResponseHandlers[type](response);
+                addLog('SUCCESS', `${type.toUpperCase()} 팝업 표시 완료`);
+            } else {
+                addLog('ERROR', `알 수 없는 응답 타입: ${type}`);
+            }
+        }
+
+        // 저장 요청 시뮬레이션
+        function simulateSaveRequest(type, data) {
+            addLog('SAVE_REQ', `${type.toUpperCase()} 저장 요청 전송 중...`);
+            
+            setTimeout(() => {
+                const success = Math.random() > 0.1; // 90% 성공률
+                
+                if (success) {
+                    addLog('SAVE_OK', `${type.toUpperCase()} 저장 완료`);
+                } else {
+                    addLog('SAVE_ERR', `${type.toUpperCase()} 저장 실패 - 네트워크 오류`);
+                }
+            }, 500 + Math.random() * 500);
+        }
+
+        // 페이지 로드 시 환영 메시지
+        $(document).ready(function() {
+            addLog('INIT', 'PopupManager 샘플 페이지 로드 완료');
+            addLog('INFO', '팝업 테스트를 시작해보세요!');
+            
+            // 디버깅용 전역 접근점
+            window.PopupSample = {
+                showCache: showCachePopup,
+                showPrompt: showPromptPopup,
+                showCacheData: showCacheWithData,
+                showPromptData: showPromptWithData,
+                simulate: simulateHttpResponse,
+                manager: PopupManager
+            };
+        });
+    </script>
+</body>
+</html>
