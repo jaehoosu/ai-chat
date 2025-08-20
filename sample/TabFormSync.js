@@ -25,6 +25,9 @@ class TabFormSync {
         // 상태
         this.menus = [];
         this.currentMenuId = null;
+        
+        // Tag 데이터 별도 저장소 (UI와 독립적)
+        this.tagData = new Map();
     }
 
     /**
@@ -511,6 +514,90 @@ class TabFormSync {
         console.log('=== 값 추출 테스트 완료 ===');
         
         return { currentData, allData, validation };
+    }
+
+    /**
+     * Tag 데이터 설정 (UI와 독립적인 저장소)
+     * @param {string} menuId - 메뉴 ID
+     * @param {object} tagInfo - Tag 관련 정보
+     */
+    setTagData(menuId, tagInfo) {
+        this.tagData.set(menuId, {
+            ...tagInfo,
+            timestamp: Date.now()
+        });
+        console.log(`Tag 데이터 설정 [${menuId}]:`, tagInfo);
+    }
+
+    /**
+     * Tag 데이터 가져오기
+     * @param {string} menuId - 메뉴 ID (선택사항, 없으면 현재 메뉴)
+     * @returns {object|null} Tag 데이터
+     */
+    getTagData(menuId = null) {
+        const targetMenuId = menuId || this.currentMenuId;
+        const tagData = this.tagData.get(targetMenuId);
+        console.log(`Tag 데이터 조회 [${targetMenuId}]:`, tagData);
+        return tagData || null;
+    }
+
+    /**
+     * Tag 데이터 삭제
+     * @param {string} menuId - 메뉴 ID (선택사항, 없으면 현재 메뉴)
+     */
+    clearTagData(menuId = null) {
+        const targetMenuId = menuId || this.currentMenuId;
+        const deleted = this.tagData.delete(targetMenuId);
+        console.log(`Tag 데이터 삭제 [${targetMenuId}]:`, deleted);
+        return deleted;
+    }
+
+    /**
+     * 모든 Tag 데이터 가져오기
+     * @returns {object} 모든 메뉴의 Tag 데이터
+     */
+    getAllTagData() {
+        const allTagData = {};
+        for (const [menuId, tagData] of this.tagData) {
+            allTagData[menuId] = tagData;
+        }
+        console.log('전체 Tag 데이터:', allTagData);
+        return allTagData;
+    }
+
+    /**
+     * 폼 데이터와 Tag 데이터를 결합하여 요청 데이터 생성
+     * @param {string} menuId - 메뉴 ID (선택사항, 없으면 현재 메뉴)
+     * @returns {object} 결합된 요청 데이터
+     */
+    getRequestData(menuId = null) {
+        const targetMenuId = menuId || this.currentMenuId;
+        const formData = this.getValues();
+        const tagData = this.getTagData(targetMenuId);
+        
+        // 메뉴 2003(상품요약)의 경우 Tag 데이터 우선 사용
+        if (targetMenuId === '2003' && tagData) {
+            const requestData = {
+                menuId: targetMenuId,
+                menuName: this.getMenuName(targetMenuId),
+                formData: formData ? formData.values : {},
+                tagData: tagData,
+                // Tag에서 선택된 상품이 있으면 우선 사용
+                productSelect: tagData.selectedProduct || tagData.productSelect || (formData ? formData.values.productSelect : null)
+            };
+            console.log('요청 데이터 생성 (Tag 포함):', requestData);
+            return requestData;
+        }
+        
+        // 일반적인 경우
+        const requestData = {
+            menuId: targetMenuId,
+            menuName: this.getMenuName(targetMenuId),
+            formData: formData ? formData.values : {},
+            tagData: tagData
+        };
+        console.log('요청 데이터 생성:', requestData);
+        return requestData;
     }
 }
 
