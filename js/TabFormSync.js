@@ -42,7 +42,9 @@ class TabFormSync {
         // jQuery 객체 캐싱
         this.$tabContainer = null;
         this.$formContainer = null;
-        this.$statusElements = {};
+    this.$statusElements = {};
+    // 메뉴별 SEND 핸들러 저장소
+    this._sendHandlers = new Map();
     }
 
     /**
@@ -358,7 +360,7 @@ class TabFormSync {
             if (config && config.elements) {
                 Object.keys(config.elements).forEach(elementId => {
                     const elementConfig = config.elements[elementId];
-                    const $formGroup = this.createFormElement(elementId, elementConfig);
+                    const $formGroup = this.createFormElement(elementId, elementConfig, menuId);
                     $form.append($formGroup);
                 });
             } else {
@@ -376,7 +378,7 @@ class TabFormSync {
     /**
      * 폼 요소 생성
      */
-    createFormElement(elementId, config) {
+    createFormElement(elementId, config, menuId) {
         const $formGroup = $('<div>').addClass('form-group');
         const $label = $('<label>')
             .attr('for', elementId)
@@ -403,7 +405,48 @@ class TabFormSync {
                 .attr('id', elementId)
                 .attr('placeholder', config.placeholder || '')
                 .on('input', () => this.updateStatus());
-            
+
+            // 특정 메뉴(예: 2004) 또는 외부에서 SEND 핸들러가 등록된 경우
+            // Enter 키 -> send (Shift+Enter -> newline). IME composition 고려.
+            try {
+                const shouldBindSend = String(menuId) === '2004' || this._sendHandlers.has(String(menuId));
+                if (shouldBindSend) {
+                    let composing = false;
+                    $textarea.on('compositionstart.send', () => { composing = true; });
+                    $textarea.on('compositionend.send', () => { composing = false; });
+
+                    $textarea.on('keydown.send', (e) => {
+                        if (composing) return; // IME 조합 중에는 무시
+                        const key = e.key || e.keyCode || e.which;
+                        const isEnter = key === 'Enter' || key === 13 || key === '13';
+                        if (isEnter && !e.shiftKey) {
+                            // 외부 등록 핸들러 우선 호출
+                            const handler = this._sendHandlers.get(String(menuId));
+                            if (typeof handler === 'function') {
+                                e.preventDefault();
+                                const formData = this.getCurrentData();
+                                const rawText = $textarea.val();
+                                try {
+                                    const maybePromise = handler(formData, { menuId: String(menuId), rawText, element: $textarea[0] });
+                                    // consumer may return Promise; we do not await here
+                                } catch (err) {
+                                    console.error('sendHandler error', err);
+                                }
+                                return;
+                            }
+
+                            // 기본 동작: 폼 변경 콜백 실행
+                            e.preventDefault();
+                            if (this.config.onFormChange) {
+                                this.config.onFormChange(this.getCurrentData());
+                            }
+                        }
+                    });
+                }
+            } catch (err) {
+                console.warn('textarea send binding failed', err);
+            }
+
             $formGroup.append($textarea);
             
         } else if (config.type === 'input') {
@@ -551,6 +594,52 @@ class TabFormSync {
             menuName: config.name,
             formData: formData
         };
+    }
+
+    /**
+     * 외부에서 메뉴별 SEND 핸들러 등록
+     * handler(formData, meta) - meta: {menuId, rawText, element}
+     */
+    registerSendHandler(menuId, handler) {
+        if (!menuId || typeof handler !== 'function') return false;
+        this._sendHandlers.set(String(menuId), handler);
+        // 이미 생성된 textarea가 있으면 동적으로 바인딩 (간단 재바인딩)
+        try {
+            const $ta = $(`#form-${menuId}`).find('textarea');
+            if ($ta && $ta.length) {
+                // trigger change to rebind handlers via createFormElement lifecycle isn't available here,
+                // so attach dynamic handler namespace
+                let composing = false;
+                $ta.off('.send');
+                $ta.on('compositionstart.send', () => { composing = true; });
+                $ta.on('compositionend.send', () => { composing = false; });
+                $ta.on('keydown.send', (e) => {
+                    if (composing) return;
+                    const key = e.key || e.keyCode || e.which;
+                    const isEnter = key === 'Enter' || key === 13 || key === '13';
+                    if (isEnter && !e.shiftKey) {
+                        e.preventDefault();
+                        const formData = this.getCurrentData();
+                        const rawText = $ta.val();
+                        try { handler(formData, { menuId: String(menuId), rawText, element: $ta[0] }); }
+                        catch (err) { console.error('sendHandler error', err); }
+                    }
+                });
+            }
+        } catch (err) {
+            console.warn('registerSendHandler dynamic bind failed', err);
+        }
+        return true;
+    }
+
+    unregisterSendHandler(menuId) {
+        if (!menuId) return false;
+        try {
+            $(`#form-${menuId}`).find('textarea').off('.send');
+        } catch (err) {
+            // ignore
+        }
+        return this._sendHandlers.delete(String(menuId));
     }
 
     /**
