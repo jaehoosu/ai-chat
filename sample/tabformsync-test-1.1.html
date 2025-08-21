@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TabFormSync v1.1 Test</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="../js/TabFormSync-1.1.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        #tabContainer {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 20px 0;
+            display: flex;
+            gap: 10px;
+        }
+        #tabContainer a {
+            padding: 10px 20px;
+            background: #e9ecef;
+            text-decoration: none;
+            color: #333;
+            border-radius: 5px;
+        }
+        #tabContainer a.current {
+            background: #007bff;
+            color: #fff;
+        }
+        #formContainer {
+            border: 1px solid #dee2e6;
+            padding: 20px;
+            border-radius: 5px;
+            background: #fff;
+        }
+        .menu-form {
+            display: none;
+        }
+        .menu-form.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h1>TabFormSync v1.1 Test</h1>
+    <ul id="tabContainer"></ul>
+    <div id="formContainer"></div>
+
+    <button id="btnRegister">Register SEND Handler</button>
+    <button id="btnUnregister">Unregister SEND Handler</button>
+
+    <script>
+        $(document).ready(function() {
+            const tabMenu = new TabFormSync({
+                apiUrl: '/api/menu/data',
+                tabContainer: '#tabContainer',
+                formContainer: '#formContainer',
+                statusElements: {
+                    currentMenu: '#currentMenu',
+                    currentValues: '#currentValues'
+                }
+            });
+
+            tabMenu.loadMenuData = async function() {
+                this.menuList = [
+                    { id: '2001', name: 'Menu 2001', description: 'Description for Menu 2001' },
+                    { id: '2002', name: 'Menu 2002', description: 'Description for Menu 2002' },
+                    { id: '2003', name: 'Menu 2003', description: 'Description for Menu 2003' },
+                    { id: '2004', name: 'Menu 2004', description: 'Description for Menu 2004' }
+                ];
+            };
+
+            tabMenu.generateTabs = function() {
+                const $tabContainer = $(this.config.tabContainer);
+                $tabContainer.empty();
+                this.menuList.forEach((menu, index) => {
+                    const isActive = index === 0;
+                    const $tab = $(`<a href="#" data-menu-id="${menu.id}" class="${isActive ? 'current' : ''}">${menu.name}</a>`);
+                    $tab.on('click', (e) => {
+                        e.preventDefault();
+                        this.currentMenuId = menu.id;
+                        $tabContainer.find('a').removeClass('current');
+                        $tab.addClass('current');
+                        this.generateForms();
+                    });
+                    $tabContainer.append($tab);
+                });
+            };
+
+            tabMenu.generateForms = function() {
+                const $formContainer = $(this.config.formContainer);
+                $formContainer.empty();
+                this.menuList.forEach(menu => {
+                    const isActive = menu.id === this.currentMenuId;
+                    const $form = $(`<div id="form-${menu.id}" class="menu-form ${isActive ? 'active' : ''}">
+                        <h3>${menu.name} Form</h3>
+                        <textarea placeholder="Enter text for ${menu.name}"></textarea>
+                    </div>`);
+                    $formContainer.append($form);
+                });
+            };
+
+            tabMenu.init();
+
+            $('#btnRegister').on('click', () => {
+                tabMenu.registerSendHandler('2004', (formData, meta) => {
+                    console.log(`SEND handler invoked for menu ${meta.menuId}`);
+                    console.log(`rawText: "${meta.rawText.replace(/\n/g, '\\n')}"`);
+                    console.log('formData snapshot:', formData);
+                });
+            });
+
+            $('#btnUnregister').on('click', () => {
+                tabMenu.unregisterSendHandler('2004');
+            });
+        });
+    </script>
+</body>
+</html>
