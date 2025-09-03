@@ -13,7 +13,51 @@ author: jaehoosu
 since: 2025.05.26
 --%>
 
-<style> /* 탭 메뉴 스타일 */ #tabContainer { list-style: none; padding: 0; margin: 0; display: flex; border-bottom: 2px solid #e9ecef; /*background: #f8f9fa;*/ border-radius: 8px 8px 0, 0; overflow: hidden; } #tabContainer li { margin: 0; } #tabContainer a { display: block; padding: 15px 25px; text-decoration: none; color: #6c757d; background: #f8f9fa; border: none; transition: all 0.3s ease; cursor: pointer; font-weight: 500; border-right: 1px solid #e9ecef; border-bottom: 3px solid transparent; } #tabContainer a:hover { background: #e9ecef; color: #495057; } #tabContainer a.current { background: white; color: #00b5ad; font-weight: 600; border-bottom-color: #00b5ad; } /* 폼 컨테이너 스타일 */ #formContainer { flex: 1; background: white; border-top: none; border-radius: 0 0 8px 8px; padding: 10px; } .menu-form { display: none; } .menu-form.active { display: block; animation: fadeIn 0.3s ease; } @Keyframes fadeIn { from {opacity:0, transform: translateY(10px);} to {opacity:1, transform: translateY(0);} } .from-group { margin-bottom: 25px; } .from-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #495057; font-size: 14px; } .from-group select .from-group input .from-group textarea { width: 100%; max-width: 400px; padding: 12px 15px; border: 1px solid #ced4da; border-radius: 6px; font-size: 14px; transition: border-color 0.3s ease, box-shadow 0.3s ease; box-sizing: border-box; } .from-group select:focus .from-group input:focus .from-group textarea:focus { outline: none; border-color: #007bff; box-shadow: 0 0 0 3px rgba(0,125,255, 0.1); } .from-group textarea { min-height: 100px; resize: vertical; } .from-group select:disable .from-group input:disable .from-group textarea:disable { border-color: #f8f9fa; color: #6c757d; cursor: not allowed; } .empty-form-message { text-align: center; color: #6c757d; font-style: italic; padding: 40px 0; } /* 프롬프트 영역 */ .input-area { display:flex; align-items:flex-start; gap:10px; margin-top:15px; } /* 입력 영역 */ .send-area { min-width:80px; display:flex; justify-content:center; } .btn-send { width:100%; height:80px; font-size:16px; cursor:pointer; } </style> <script src="${pageContext.request.contextPath}/js/kzone/kzone.ai.tabsync.js"></script> <script src="${pageContext.request.contextPath}/js/kzone/kzone.ai.chatbox.js"></script> <script src="${pageContext.request.contextPath}/js/kzone/kzone.ai.httputil.js"></script> <script src="${pageContext.request.contextPath}/js/kzone/kzone.ai.popup.js"></script> <script type="text/javascript">
+<style> 
+/* 탭 메뉴 스타일 */ 
+#tabContainer { list-style: none; padding: 0; margin: 0; display: flex; border-bottom: 2px solid #e9ecef; /*background: #f8f9fa;*/ border-radius: 8px 8px 0, 0; overflow: hidden; } 
+#tabContainer li { margin: 0; } 
+#tabContainer a { display: block; padding: 15px 25px; text-decoration: none; color: #6c757d; background: #f8f9fa; border: none; transition: all 0.3s ease; cursor: pointer; font-weight: 500; border-right: 1px solid #e9ecef; border-bottom: 3px solid transparent; } 
+#tabContainer a:hover { background: #e9ecef; color: #495057; } 
+#tabContainer a.current { background: white; color: #00b5ad; font-weight: 600; border-bottom-color: #00b5ad; } 
+/* 폼 컨테이너 스타일 */ 
+#formContainer { flex: 1; background: white; border-top: none; border-radius: 0 0 8px 8px; padding: 10px; } 
+.menu-form { display: none; } 
+.menu-form.active { display: block; animation: fadeIn 0.3s ease; } 
+@Keyframes fadeIn { from {opacity:0, transform: translateY(10px);} to {opacity:1, transform: translateY(0);} } 
+.from-group { margin-bottom: 25px; } 
+.from-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #495057; font-size: 14px; } 
+.from-group select,
+.from-group input,
+.from-group textarea { 
+    width: 100%; 
+    max-width: 400px; 
+    padding: 12px 15px; 
+    border: 1px solid #ced4da; 
+    border-radius: 6px; 
+    font-size: 14px; 
+    transition: border-color 0.3s ease, box-shadow 0.3s ease; 
+    box-sizing: border-box; 
+} 
+.from-group select:focus, 
+.from-group input:focus, 
+.from-group textarea:focus { outline: none; border-color: #007bff; box-shadow: 0 0 0 3px rgba(0,125,255, 0.1); } 
+.from-group textarea { min-height: 100px; resize: vertical; } 
+.from-group select:disabled, 
+.from-group input:disabled, 
+.from-group textarea:disabled { border-color: #f8f9fa; color: #6c757d; cursor: not-allowed; } 
+.empty-form-message { text-align: center; color: #6c757d; font-style: italic; padding: 40px 0; } 
+/* 프롬프트 영역 */ 
+.input-area { display:flex; align-items:flex-start; gap:10px; margin-top:15px; } 
+/* 입력 영역 */ 
+.send-area { min-width:80px; display:flex; justify-content:center; } 
+.btn-send { width:100%; height:80px; font-size:16px; cursor:pointer; }
+</style> 
+<script src="${pageContext.request.contextPath}/js/kzone/kzone.ai.tabsync.js"></script>
+<script src="${pageContext.request.contextPath}/js/kzone/kzone.ai.chatbox.js"></script> 
+<script src="${pageContext.request.contextPath}/js/kzone/kzone.ai.httputil.js"></script> 
+<script src="${pageContext.request.contextPath}/js/kzone/kzone.ai.popup.js"></script> 
+<script type="text/javascript">
 let $tabMenu;
 let $chatBox;
 
@@ -31,7 +75,7 @@ const menuConfigs = {
                 },
                 '2004': {
                     elements: {
-                        'queryInput': { type: 'textarea', defaultValue: '', label: '질문 입력', placeholder: 'KT 상품에 대해 궁금한 점을 입력하세요...' }
+                        'queryInput': { type: 'textarea', defaultValue: '', label: '질문 입력', placeholder: '상품에 대해 궁금한 점을 입력하세요...' }
                     }
                 },
                 '2005': {
